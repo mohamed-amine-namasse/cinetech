@@ -1,0 +1,99 @@
+:root {
+  --black: #060606;
+  --green: #32bc17;
+  --cyan: #06f8f0;
+  --red: #ea0505;
+  --orange: #ef7b45;
+  --white: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+}
+body h1 {
+  color: var(--black);
+}
+body a {
+  text-decoration: none;
+  color: var(--black);
+}
+body.fixed {
+  position: fixed;
+}
+body {
+  width: 100%;
+}
+
+/*-- Header--*/
+body header {
+  background-color: var(--black);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 5;
+  box-shadow: var(--green);
+  border-bottom: 2px dotted var(--cyan);
+}
+
+body header nav {
+  min-height: 2vw;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 20px 6% 20px 6%;
+}
+
+body header nav strong {
+  font-size: 25px;
+  font-weight: 900;
+}
+
+body main {
+  width: 100%;
+  overflow: hidden;
+  padding-top: 120px;
+  transition: all 0.3s;
+  filter: blur(0px);
+  visibility: visible;
+}
+body main.blured {
+  filter: blur(2px);
+}
+body main.invisible {
+  visibility: hidden;
+}
+body main .hero {
+  margin-bottom: 10vh;
+}
+
+.title {
+  color: var(--white);
+  font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+  font-style: italic;
+}
+.title:hover {
+  color: var(--red);
+}
+.links {
+  min-height: 2vw;
+  display: flex;
+  flex-direction: row;
+  gap: 2vw;
+  align-items: center;
+}
+.links a {
+  color: var(--white);
+  font-weight: bold;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.links a:hover {
+  color: var(--red);
+}
