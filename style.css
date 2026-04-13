@@ -39,7 +39,11 @@ body header {
   width: 100%;
   z-index: 5;
   box-shadow: var(--green);
-  border-bottom: 2px dotted var(--cyan);
+}
+body header .container {
+  background-color: var(--red);
+  display: flex;
+  justify-content: center;
 }
 
 body header nav {
@@ -47,14 +51,13 @@ body header nav {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  align-items: center;
   padding: 20px 6% 20px 6%;
 }
 
 body header nav strong {
   font-size: 25px;
-  font-weight: 900;
 }
-
 body main {
   width: 100%;
   overflow: hidden;
@@ -75,18 +78,15 @@ body main .hero {
 
 .title {
   color: var(--white);
-  font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
-  font-style: italic;
+  font-family: "Courier New", Courier, monospace;
 }
 .title:hover {
   color: var(--red);
 }
 .links {
-  min-height: 2vw;
   display: flex;
   flex-direction: row;
   gap: 2vw;
-  align-items: center;
 }
 .links a {
   color: var(--white);
@@ -96,4 +96,21 @@ body main .hero {
 
 .links a:hover {
   color: var(--red);
+}
+
+.header-search-input {
+  border: 1px solid #d1d1d1;
+  width: 30%;
+  border-radius: 2px;
+  color: #737373;
+  font-family: montserrat, Arial, Sans-Serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 0.5rem 0.875rem;
+}
+.header-search-submit {
+  border: 1px solid #d1d1d1;
+  border-radius: 0 2px 2px 0;
+  font-size: 0.75rem;
+  padding: 0.5625rem 0.625rem;
 }

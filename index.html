@@ -5,14 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cinetech | Accueil</title>
     <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
     <!--<script src="./index.js" defer></script>-->
   </head>
   <body>
     <header>
+      <div class="container">
+        <input
+          type="text"
+          id="header-search-input"
+          name="site_search[q]"
+          class="header-search-input"
+          placeholder="Rechercher un film, une série, une star..."
+        /><button
+          class="header-search-submit"
+          type="submit"
+          title="Rechercher"
+          aria-label="Envoyer"
+        >
+          <i class="fa fa-search"></i>
+        </button>
+      </div>
+
       <nav>
         <a href="#top"
           ><strong><span class="title">Cinetech</span></strong></a
         >
+
         <div class="links">
           <a href="./index.html"> Accueil </a>
           <a href="#films"> Films </a>
