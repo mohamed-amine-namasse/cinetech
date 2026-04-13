@@ -41,7 +41,9 @@ body header {
   box-shadow: var(--green);
 }
 body header .container {
-  background-color: var(--red);
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background-color: #e6cc25;
   display: flex;
   justify-content: center;
 }
@@ -61,7 +63,8 @@ body header nav strong {
 body main {
   width: 100%;
   overflow: hidden;
-  padding-top: 120px;
+  padding-top: 145px;
+  padding-left: 15px;
   transition: all 0.3s;
   filter: blur(0px);
   visibility: visible;
@@ -78,7 +81,7 @@ body main .hero {
 
 .title {
   color: var(--white);
-  font-family: "Courier New", Courier, monospace;
+  font-family: montserrat, Arial, Sans-Serif;
 }
 .title:hover {
   color: var(--red);
@@ -91,7 +94,7 @@ body main .hero {
 .links a {
   color: var(--white);
   font-weight: bold;
-  font-family: "Courier New", Courier, monospace;
+  font-family: montserrat, Arial, Sans-Serif;
 }
 
 .links a:hover {
@@ -101,17 +104,21 @@ body main .hero {
 .header-search-input {
   border: 1px solid #d1d1d1;
   width: 30%;
-  border-radius: 2px;
+  border-radius: 8px 0 0 8px;
   color: #737373;
   font-family: montserrat, Arial, Sans-Serif;
   font-size: 0.8125rem;
   font-weight: 700;
   padding: 0.5rem 0.875rem;
 }
+
 .header-search-submit {
   border: 1px solid #d1d1d1;
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 8px 8px 0;
   font-size: 0.75rem;
   padding: 0.5625rem 0.625rem;
   cursor: pointer;
+}
+.header-search-submit:hover {
+  background-color: #d1d1d1;
 }
