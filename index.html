@@ -14,20 +14,33 @@
   <body>
     <header>
       <div class="container">
-        <input
-          type="text"
-          name="site_search[q]"
-          class="header-search-input"
-          placeholder="Rechercher un film, une série, une star..."
-          autocomplete="off"
-        /><button
-          class="header-search-submit"
-          type="submit"
-          title="Rechercher"
-          aria-label="Envoyer"
-        >
-          <i class="fa fa-search"></i>
-        </button>
+        <div class="search-autocomplete">
+          <input
+            type="text"
+            name="site_search[q]"
+            class="header-search-input"
+            placeholder="Rechercher un film, une série, une star..."
+            autocomplete="off"
+            aria-label="Recherche"
+            aria-autocomplete="list"
+            aria-controls="search-suggestion-list"
+            aria-expanded="false"
+          />
+          <button
+            class="header-search-submit"
+            type="submit"
+            title="Rechercher"
+            aria-label="Envoyer"
+          >
+            <i class="fa fa-search"></i>
+          </button>
+          <ul
+            class="search-suggestions"
+            id="search-suggestion-list"
+            role="listbox"
+            aria-label="Suggestions de recherche"
+          ></ul>
+        </div>
       </div>
 
       <nav>
@@ -48,5 +61,6 @@
         <p>Cuisinez avec passion, partagez avec amour.</p>
       </section>
     </main>
+    <script src="./index.js" defer></script>
   </body>
 </html>
