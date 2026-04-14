@@ -16,9 +16,7 @@ function formatSuggestion(item) {
       ? "Film"
       : item.media_type === "tv"
         ? "Série"
-        : item.media_type === "person"
-          ? "Star"
-          : "Résultat";
+        : "Résultat";
   const year = item.release_date || item.first_air_date || "";
   const yearText = year ? year.slice(0, 4) : "";
   return {
@@ -26,6 +24,7 @@ function formatSuggestion(item) {
     type,
     year: yearText,
     value: title,
+    id: item.id,
   };
 }
 
@@ -62,9 +61,9 @@ function updateSuggestions(items) {
 
 function selectSuggestion(index) {
   const suggestion = currentSuggestions[index];
-  if (!suggestion || !searchInput) return;
-  searchInput.value = suggestion.value;
-  clearSuggestions();
+  if (!suggestion) return;
+  const type = suggestion.type === "Film" ? "movie" : "tv";
+  window.location.href = `./details.html?type=${type}&id=${suggestion.id}`;
 }
 
 async function fetchTmdbSuggestions(query) {
@@ -86,9 +85,7 @@ async function fetchTmdbSuggestions(query) {
     }
     const data = await response.json();
     const items = (data.results || [])
-      .filter((item) =>
-        ["movie", "tv", "person"].includes(item.media_type || ""),
-      )
+      .filter((item) => ["movie", "tv"].includes(item.media_type || ""))
       .slice(0, 8)
       .map(formatSuggestion);
     updateSuggestions(items);

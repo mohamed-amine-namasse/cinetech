@@ -1,3 +1,4 @@
+"use strict";
 const detailPoster = document.getElementById("detail-poster");
 const detailKind = document.getElementById("detail-kind");
 const detailTitle = document.getElementById("detail-title");
@@ -10,57 +11,48 @@ const similarGrid = document.getElementById("similar-grid");
 const params = new URLSearchParams(window.location.search);
 const type = params.get("type") === "tv" ? "tv" : "movie";
 const id = params.get("id");
-
 console.log("Details page loaded - Type:", type, "ID:", id);
-
 function createTag(text) {
-  return `<span class="chip">${text}</span>`;
+    return `<span class="chip">${text}</span>`;
 }
-
 function buildPoster(path) {
-  if (!path) {
-    return "https://via.placeholder.com/500x750?text=Pas+d'affiche";
-  }
-  return `${IMAGE_BASE}${path}`;
+    if (!path) {
+        return "https://via.placeholder.com/500x750?text=Pas+d'affiche";
+    }
+    return `${IMAGE_BASE}${path}`;
 }
-
 function getYear(value) {
-  return value ? value.slice(0, 4) : "";
+    return value ? value.slice(0, 4) : "";
 }
-
 function getDirector(credits) {
-  return (
-    credits.crew?.find((member) => member.job === "Director")?.name ||
-    credits.crew?.find((member) => member.job === "Créateur")?.name ||
-    "Inconnu"
-  );
+    return (credits.crew?.find((member) => member.job === "Director")?.name ||
+        credits.crew?.find((member) => member.job === "Créateur")?.name ||
+        "Inconnu");
 }
-
 function renderCast(cast) {
-  if (!cast?.length) return "<p>Aucun acteur trouvé.</p>";
-  return cast
-    .slice(0, 8)
-    .map(
-      (member) => `
+    if (!cast?.length)
+        return "<p>Aucun acteur trouvé.</p>";
+    return cast
+        .slice(0, 8)
+        .map((member) => `
     <article class="cast-card">
       <p class="cast-name">${member.name}</p>
       <p class="cast-role">${member.character || member.job || "Rôle inconnu"}</p>
     </article>
-  `,
-    )
-    .join("");
+  `)
+        .join("");
 }
-
 function renderSimilar(items) {
-  if (!items?.length) return "<p>Aucune suggestion similaire.</p>";
-  return items
-    .slice(0, 6)
-    .map((item) => {
-      const title = item.title || item.name || "Titre inconnu";
-      const poster = item.poster_path
-        ? `${IMAGE_BASE}${item.poster_path}`
-        : "https://via.placeholder.com/300x450?text=Pas+d'affiche";
-      return `
+    if (!items?.length)
+        return "<p>Aucune suggestion similaire.</p>";
+    return items
+        .slice(0, 6)
+        .map((item) => {
+        const title = item.title || item.name || "Titre inconnu";
+        const poster = item.poster_path
+            ? `${IMAGE_BASE}${item.poster_path}`
+            : "https://via.placeholder.com/300x450?text=Pas+d'affiche";
+        return `
       <article class="card card-small">
         <a href="./details.html?type=${type}&id=${item.id}">
           <div class="card-image" style="background-image:url('${poster}')"></div>
@@ -71,78 +63,88 @@ function renderSimilar(items) {
       </article>
     `;
     })
-    .join("");
+        .join("");
 }
-
 async function loadDetails() {
-  if (!id) {
-    document.title = "Erreur | Cinetech";
-    detailTitle.textContent = "Identifiant manquant";
-    detailOverview.textContent = "Impossible de charger cette fiche.";
-    return;
-  }
-  const detailUrl = `${BASE_URL}/${type}/${id}?api_key=${API_KEY}&language=fr-FR`;
-  const creditsUrl = `${BASE_URL}/${type}/${id}/credits?api_key=${API_KEY}&language=fr-FR`;
-  const similarUrl = `${BASE_URL}/${type}/${id}/similar?api_key=${API_KEY}&language=fr-FR&page=1`;
-  try {
-    const [detailRes, creditsRes, similarRes] = await Promise.all([
-      fetch(detailUrl),
-      fetch(creditsUrl),
-      fetch(similarUrl),
-    ]);
-    if (!detailRes.ok || !creditsRes.ok || !similarRes.ok) {
-      throw new Error("Erreur TMDB");
+    if (!id) {
+        document.title = "Erreur | Cinetech";
+        if (detailTitle)
+            detailTitle.textContent = "Identifiant manquant";
+        if (detailOverview)
+            detailOverview.textContent = "Impossible de charger cette fiche.";
+        return;
     }
-    const detail = await detailRes.json();
-    const credits = await creditsRes.json();
-    const similar = await similarRes.json();
-
-    const title = detail.title || detail.name || "Titre inconnu";
-    const originalTitle = detail.original_title || detail.original_name || "";
-    const date = detail.release_date || detail.first_air_date || "";
-    const year = getYear(date);
-    const runtime = detail.runtime || detail.episode_run_time?.[0] || 0;
-    const genres = (detail.genres || []).map((genre) => genre.name).join(" • ");
-    const countries = (
-      detail.production_countries ||
-      detail.origin_country ||
-      []
-    )
-      .map((country) => country.name || country)
-      .join(", ");
-    const director =
-      type === "movie"
-        ? getDirector(credits)
-        : detail.created_by?.map((creator) => creator.name).join(", ") ||
-          "Inconnu";
-
-    document.title = `${title} | Cinetech`;
-    detailPoster.style.backgroundImage = `url('${buildPoster(detail.poster_path || detail.backdrop_path)}')`;
-    detailKind.textContent = type === "movie" ? "Film" : "Série";
-    detailTitle.textContent = title;
-    detailSubtitle.textContent =
-      originalTitle && originalTitle !== title ? originalTitle : "";
-    detailTags.innerHTML = [
-      genres && createTag(genres),
-      year && createTag(year),
-      countries && createTag(countries),
-    ]
-      .filter(Boolean)
-      .join("");
-    detailOverview.textContent = detail.overview || "Aucun résumé disponible.";
-    detailExtra.innerHTML = `
+    const detailUrl = `${BASE_URL}/${type}/${id}?api_key=${API_KEY}&language=fr-FR`;
+    const creditsUrl = `${BASE_URL}/${type}/${id}/credits?api_key=${API_KEY}&language=fr-FR`;
+    const similarUrl = `${BASE_URL}/${type}/${id}/similar?api_key=${API_KEY}&language=fr-FR&page=1`;
+    try {
+        const [detailRes, creditsRes, similarRes] = await Promise.all([
+            fetch(detailUrl),
+            fetch(creditsUrl),
+            fetch(similarUrl),
+        ]);
+        if (!detailRes.ok || !creditsRes.ok || !similarRes.ok) {
+            throw new Error("Erreur TMDB");
+        }
+        const detail = await detailRes.json();
+        const credits = await creditsRes.json();
+        const similar = await similarRes.json();
+        const title = detail.title || detail.name || "Titre inconnu";
+        const originalTitle = detail.original_title || detail.original_name || "";
+        const date = detail.release_date || detail.first_air_date || "";
+        const year = getYear(date);
+        const runtime = detail.runtime || detail.episode_run_time?.[0] || 0;
+        const genres = (detail.genres || [])
+            .map((genre) => genre.name)
+            .join(" • ");
+        const countries = (detail.production_countries ||
+            detail.origin_country ||
+            [])
+            .map((country) => country.name || country)
+            .join(", ");
+        const director = type === "movie"
+            ? getDirector(credits)
+            : detail.created_by?.map((creator) => creator.name).join(", ") ||
+                "Inconnu";
+        document.title = `${title} | Cinetech`;
+        if (detailPoster)
+            detailPoster.style.backgroundImage = `url('${buildPoster(detail.poster_path || detail.backdrop_path)}')`;
+        if (detailKind)
+            detailKind.textContent = type === "movie" ? "Film" : "Série";
+        if (detailTitle)
+            detailTitle.textContent = title;
+        if (detailSubtitle)
+            detailSubtitle.textContent =
+                originalTitle && originalTitle !== title ? originalTitle : "";
+        if (detailTags)
+            detailTags.innerHTML = [
+                genres && createTag(genres),
+                year && createTag(year),
+                countries && createTag(countries),
+            ]
+                .filter(Boolean)
+                .join("");
+        if (detailOverview)
+            detailOverview.textContent =
+                detail.overview || "Aucun résumé disponible.";
+        if (detailExtra)
+            detailExtra.innerHTML = `
       <div class="info-row"><strong>Réalisateur / Créateur :</strong> ${director}</div>
       <div class="info-row"><strong>Durée :</strong> ${runtime ? `${runtime} min` : "N/A"}</div>
       <div class="info-row"><strong>Popularité :</strong> ${Math.round(detail.popularity || 0)}</div>
     `;
-    castList.innerHTML = renderCast(credits.cast || []);
-    similarGrid.innerHTML = renderSimilar(similar.results || []);
-  } catch (error) {
-    console.error("Erreur détail TMDB:", error);
-    detailTitle.textContent = "Impossible de charger la fiche";
-    detailOverview.textContent =
-      "Une erreur est survenue lors du chargement des informations.";
-  }
+        if (castList)
+            castList.innerHTML = renderCast(credits.cast || []);
+        if (similarGrid)
+            similarGrid.innerHTML = renderSimilar(similar.results || []);
+    }
+    catch (error) {
+        console.error("Erreur détail TMDB:", error);
+        if (detailTitle)
+            detailTitle.textContent = "Impossible de charger la fiche";
+        if (detailOverview)
+            detailOverview.textContent =
+                "Une erreur est survenue lors du chargement des informations.";
+    }
 }
-
 loadDetails();

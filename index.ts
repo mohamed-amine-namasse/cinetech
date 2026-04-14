@@ -16,6 +16,8 @@ type TmdbItem = {
 };
 
 const API_KEY: string = "2add3b68b231e4e8373050f53498e68f";
+const BASE_URL: string = "https://api.themoviedb.org/3";
+const IMAGE_BASE: string = "https://image.tmdb.org/t/p/w500";
 const SEARCH_URL = "https://api.themoviedb.org/3/search/multi";
 const searchInput = document.querySelector<HTMLInputElement>(
   ".header-search-input",
