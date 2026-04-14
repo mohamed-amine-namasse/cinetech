@@ -9,9 +9,9 @@ const detailExtra = document.getElementById("detail-extra");
 const castList = document.getElementById("cast-list");
 const similarGrid = document.getElementById("similar-grid");
 const params = new URLSearchParams(window.location.search);
-const type = params.get("type") === "tv" ? "tv" : "movie";
+const mediaType = params.get("type") === "tv" ? "tv" : "movie";
 const id = params.get("id");
-console.log("Details page loaded - Type:", type, "ID:", id);
+console.log("Details page loaded - Type:", mediaType, "ID:", id);
 function createTag(text) {
     return `<span class="chip">${text}</span>`;
 }
@@ -25,12 +25,13 @@ function getYear(value) {
     return value ? value.slice(0, 4) : "";
 }
 function getDirector(credits) {
-    return (credits.crew?.find((member) => member.job === "Director")?.name ||
-        credits.crew?.find((member) => member.job === "Créateur")?.name ||
+    var _a, _b, _c, _d;
+    return (((_b = (_a = credits.crew) === null || _a === void 0 ? void 0 : _a.find((member) => member.job === "Director")) === null || _b === void 0 ? void 0 : _b.name) ||
+        ((_d = (_c = credits.crew) === null || _c === void 0 ? void 0 : _c.find((member) => member.job === "Créateur")) === null || _d === void 0 ? void 0 : _d.name) ||
         "Inconnu");
 }
 function renderCast(cast) {
-    if (!cast?.length)
+    if (!(cast === null || cast === void 0 ? void 0 : cast.length))
         return "<p>Aucun acteur trouvé.</p>";
     return cast
         .slice(0, 8)
@@ -43,7 +44,7 @@ function renderCast(cast) {
         .join("");
 }
 function renderSimilar(items) {
-    if (!items?.length)
+    if (!(items === null || items === void 0 ? void 0 : items.length))
         return "<p>Aucune suggestion similaire.</p>";
     return items
         .slice(0, 6)
@@ -54,7 +55,7 @@ function renderSimilar(items) {
             : "https://via.placeholder.com/300x450?text=Pas+d'affiche";
         return `
       <article class="card card-small">
-        <a href="./details.html?type=${type}&id=${item.id}">
+        <a href="./details.html?type=${mediaType}&id=${item.id}">
           <div class="card-image" style="background-image:url('${poster}')"></div>
           <div class="card-body">
             <h3>${title}</h3>
@@ -66,6 +67,7 @@ function renderSimilar(items) {
         .join("");
 }
 async function loadDetails() {
+    var _a, _b;
     if (!id) {
         document.title = "Erreur | Cinetech";
         if (detailTitle)
@@ -74,9 +76,9 @@ async function loadDetails() {
             detailOverview.textContent = "Impossible de charger cette fiche.";
         return;
     }
-    const detailUrl = `${BASE_URL}/${type}/${id}?api_key=${API_KEY}&language=fr-FR`;
-    const creditsUrl = `${BASE_URL}/${type}/${id}/credits?api_key=${API_KEY}&language=fr-FR`;
-    const similarUrl = `${BASE_URL}/${type}/${id}/similar?api_key=${API_KEY}&language=fr-FR&page=1`;
+    const detailUrl = `${BASE_URL}/${mediaType}/${id}?api_key=${API_KEY}&language=fr-FR`;
+    const creditsUrl = `${BASE_URL}/${mediaType}/${id}/credits?api_key=${API_KEY}&language=fr-FR`;
+    const similarUrl = `${BASE_URL}/${mediaType}/${id}/similar?api_key=${API_KEY}&language=fr-FR&page=1`;
     try {
         const [detailRes, creditsRes, similarRes] = await Promise.all([
             fetch(detailUrl),
@@ -93,7 +95,7 @@ async function loadDetails() {
         const originalTitle = detail.original_title || detail.original_name || "";
         const date = detail.release_date || detail.first_air_date || "";
         const year = getYear(date);
-        const runtime = detail.runtime || detail.episode_run_time?.[0] || 0;
+        const runtime = detail.runtime || ((_a = detail.episode_run_time) === null || _a === void 0 ? void 0 : _a[0]) || 0;
         const genres = (detail.genres || [])
             .map((genre) => genre.name)
             .join(" • ");
@@ -102,15 +104,15 @@ async function loadDetails() {
             [])
             .map((country) => country.name || country)
             .join(", ");
-        const director = type === "movie"
+        const director = mediaType === "movie"
             ? getDirector(credits)
-            : detail.created_by?.map((creator) => creator.name).join(", ") ||
+            : ((_b = detail.created_by) === null || _b === void 0 ? void 0 : _b.map((creator) => creator.name).join(", ")) ||
                 "Inconnu";
         document.title = `${title} | Cinetech`;
         if (detailPoster)
             detailPoster.style.backgroundImage = `url('${buildPoster(detail.poster_path || detail.backdrop_path)}')`;
         if (detailKind)
-            detailKind.textContent = type === "movie" ? "Film" : "Série";
+            detailKind.textContent = mediaType === "movie" ? "Film" : "Série";
         if (detailTitle)
             detailTitle.textContent = title;
         if (detailSubtitle)

@@ -1,7 +1,3 @@
-declare var API_KEY: string;
-declare var BASE_URL: string;
-declare var IMAGE_BASE: string;
-
 const detailPoster: HTMLElement | null =
   document.getElementById("detail-poster");
 const detailKind: HTMLElement | null = document.getElementById("detail-kind");

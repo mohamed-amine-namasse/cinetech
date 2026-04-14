@@ -10,6 +10,6 @@
     "rootDir": "./",
     "noEmitOnError": false
   },
-  "include": ["index.ts", "globals.d.ts"],
+  "include": ["index.ts", "list.ts", "details.ts", "config/config.ts"],
   "exclude": ["node_modules"]
 }

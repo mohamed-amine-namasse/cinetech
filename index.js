@@ -1,216 +1,178 @@
 "use strict";
-const API_KEY = "2add3b68b231e4e8373050f53498e68f";
-const BASE_URL = "https://api.themoviedb.org/3";
 const SEARCH_URL = "https://api.themoviedb.org/3/search/multi";
-const IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 const searchInput = document.querySelector(".header-search-input");
 const suggestionsList = document.querySelector(".search-suggestions");
 let activeSuggestion = -1;
 let currentSuggestions = [];
 let debounceTimer = null;
-
+/**
+ * Formate un item de l'API en objet Suggestion (sans les Stars)
+ */
 function formatSuggestion(item) {
-  const title = item.title || item.name || "Suggestion";
-  const type =
-    item.media_type === "movie"
-      ? "Film"
-      : item.media_type === "tv"
-        ? "Série"
-        : "Résultat";
-  const year = item.release_date || item.first_air_date || "";
-  const yearText = year ? year.slice(0, 4) : "";
-  return {
-    title,
-    type,
-    year: yearText,
-    value: title,
-    id: item.id,
-  };
+    // On ignore les personnes (stars)
+    if (item.media_type === "person")
+        return null;
+    const title = item.title || item.name || "Suggestion";
+    const isMovie = item.media_type === "movie" || !!item.title;
+    const typeLabel = isMovie ? "Film" : "Série";
+    const mediaType = isMovie ? "movie" : "tv";
+    const year = item.release_date || item.first_air_date || "";
+    const yearText = year ? year.slice(0, 4) : "";
+    return {
+        id: item.id,
+        title,
+        type: typeLabel,
+        mediaType: mediaType,
+        year: yearText,
+        value: title,
+    };
 }
-
 function clearSuggestions() {
-  if (!suggestionsList || !searchInput) return;
-  suggestionsList.innerHTML = "";
-  suggestionsList.classList.remove("active");
-  searchInput.setAttribute("aria-expanded", "false");
-  activeSuggestion = -1;
-  currentSuggestions = [];
+    if (!suggestionsList || !searchInput)
+        return;
+    suggestionsList.innerHTML = "";
+    suggestionsList.classList.remove("active");
+    searchInput.setAttribute("aria-expanded", "false");
+    activeSuggestion = -1;
+    currentSuggestions = [];
 }
-
+/**
+ * Met à jour le DOM de la liste de suggestions
+ */
 function updateSuggestions(items) {
-  if (!suggestionsList || !searchInput) return;
-  suggestionsList.innerHTML = "";
-  if (!items.length) {
-    clearSuggestions();
-    return;
-  }
-  currentSuggestions = items;
-  items.forEach((suggestion, index) => {
-    const item = document.createElement("li");
-    item.setAttribute("role", "option");
-    item.setAttribute("aria-selected", "false");
-    item.innerHTML = `${suggestion.title}<span class="suggestion-type">${suggestion.type}</span>${suggestion.year ? `<span class="suggestion-year">${suggestion.year}</span>` : ""}`;
-    item.addEventListener("click", () => {
-      selectSuggestion(index);
-    });
-    suggestionsList.appendChild(item);
-  });
-  suggestionsList.classList.add("active");
-  searchInput.setAttribute("aria-expanded", "true");
-}
-
-function selectSuggestion(index) {
-  const suggestion = currentSuggestions[index];
-  if (!suggestion) return;
-  const type = suggestion.type === "Film" ? "movie" : "tv";
-  window.location.href = `./details.html?type=${type}&id=${suggestion.id}`;
-}
-
-async function fetchTmdbSuggestions(query) {
-  if (!query || query.length < 2) {
-    clearSuggestions();
-    return;
-  }
-  if (!API_KEY || API_KEY === "VOTRE_API_KEY_TMDB") {
-    clearSuggestions();
-    console.warn("TMDB API key manquante ou invalide.");
-    return;
-  }
-  const url = `${SEARCH_URL}?api_key=${API_KEY}&language=fr-FR&query=${encodeURIComponent(query)}&include_adult=false&page=1`;
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      clearSuggestions();
-      return;
-    }
-    const data = await response.json();
-    const items = (data.results || [])
-      .filter((item) => ["movie", "tv"].includes(item.media_type || ""))
-      .slice(0, 8)
-      .map(formatSuggestion);
-    updateSuggestions(items);
-  } catch (error) {
-    clearSuggestions();
-    console.error("Erreur TMDB:", error);
-  }
-}
-
-function highlightSuggestion(index) {
-  if (!suggestionsList) return;
-  const itemNodes = Array.from(suggestionsList.children);
-  itemNodes.forEach((node, idx) => {
-    if (idx === index) {
-      node.classList.add("active");
-      node.setAttribute("aria-selected", "true");
-      node.scrollIntoView({ block: "nearest" });
-    } else {
-      node.classList.remove("active");
-      node.setAttribute("aria-selected", "false");
-    }
-  });
-}
-
-function onInput(event) {
-  const target = event.target;
-  const value = target?.value.trim() ?? "";
-  if (debounceTimer) {
-    window.clearTimeout(debounceTimer);
-  }
-  debounceTimer = window.setTimeout(() => {
-    fetchTmdbSuggestions(value);
-  }, 220);
-}
-
-function onKeyDown(event) {
-  if (!suggestionsList || !suggestionsList.classList.contains("active")) return;
-  const itemCount = suggestionsList.children.length;
-  if (!itemCount) return;
-  switch (event.key) {
-    case "ArrowDown":
-      event.preventDefault();
-      activeSuggestion = Math.min(activeSuggestion + 1, itemCount - 1);
-      highlightSuggestion(activeSuggestion);
-      break;
-    case "ArrowUp":
-      event.preventDefault();
-      activeSuggestion = Math.max(activeSuggestion - 1, 0);
-      highlightSuggestion(activeSuggestion);
-      break;
-    case "Enter":
-      event.preventDefault();
-      if (activeSuggestion >= 0) {
-        selectSuggestion(activeSuggestion);
-      } else {
+    if (!suggestionsList || !searchInput)
+        return;
+    suggestionsList.innerHTML = "";
+    if (!items.length) {
         clearSuggestions();
-      }
-      break;
-    case "Escape":
-      clearSuggestions();
-      break;
-    default:
-      break;
-  }
-}
-
-if (searchInput) {
-  searchInput.addEventListener("input", onInput);
-  searchInput.addEventListener("keydown", onKeyDown);
-  searchInput.addEventListener("blur", () => {
-    window.setTimeout(() => {
-      clearSuggestions();
-    }, 120);
-  });
-}
-
-document.addEventListener("click", (event) => {
-  const target = event.target;
-  if (!target?.closest || !target.closest(".search-autocomplete")) {
-    clearSuggestions();
-  }
-});
-
-function renderCard(item) {
-  const title = item.title || item.name || "Titre inconnu";
-  const date = item.release_date || item.first_air_date || "";
-  const year = date ? date.slice(0, 4) : "";
-  const poster = item.poster_path
-    ? `${IMAGE_BASE}${item.poster_path}`
-    : "https://via.placeholder.com/300x450?text=Pas+d'affiche";
-  const type = item.media_type || (item.title ? "movie" : "tv");
-  const linkType = type === "movie" ? "movie" : "tv";
-  return `
-    <article class="card">
-      <a href="./details.html?type=${linkType}&id=${item.id}" aria-label="Ouvrir la fiche de ${title}">
-        <div class="card-image" style="background-image:url('${poster}')"></div>
-        <div class="card-body">
-          <h3>${title}</h3>
-          <p class="card-meta">${year} • ${linkType === "movie" ? "Film" : "Série"}</p>
-        </div>
-      </a>
-    </article>
-  `;
-}
-
-async function fetchHomeSelection(type, containerSelector, limit = 6) {
-  const container = document.querySelector(containerSelector);
-  if (!container) return;
-  const url = `${BASE_URL}/${type}/popular?api_key=${API_KEY}&language=fr-FR&page=1`;
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      container.innerHTML = "<p>Impossible de charger la sélection.</p>";
-      return;
+        return;
     }
-    const data = await response.json();
-    const items = (data.results || []).slice(0, limit);
-    container.innerHTML = items.map(renderCard).join("");
-  } catch (error) {
-    container.innerHTML = "<p>Erreur de chargement.</p>";
-    console.error("Erreur TMDB accueil:", error);
-  }
+    currentSuggestions = items;
+    items.forEach((suggestion, index) => {
+        const li = document.createElement("li");
+        li.setAttribute("role", "option");
+        li.id = `suggestion-${index}`;
+        li.innerHTML = `
+      <div class="suggestion-info">
+        <span class="suggestion-title">${suggestion.title}</span>
+        <span class="suggestion-meta">${suggestion.year} • ${suggestion.type}</span>
+      </div>
+    `;
+        // Événement de clic pour la redirection
+        li.addEventListener("click", () => {
+            selectSuggestion(index);
+        });
+        suggestionsList.appendChild(li);
+    });
+    suggestionsList.classList.add("active");
+    searchInput.setAttribute("aria-expanded", "true");
 }
-
-if (document.body.className || document.querySelector("#films .cards-grid")) {
-  fetchHomeSelection("movie", "#films .cards-grid", 6);
-  fetchHomeSelection("tv", "#series .cards-grid", 6);
+function highlightSuggestion(index) {
+    if (!suggestionsList)
+        return;
+    Array.from(suggestionsList.children).forEach((child, i) => {
+        child.classList.toggle("focused", i === index);
+    });
+    if (index >= 0) {
+        searchInput === null || searchInput === void 0 ? void 0 : searchInput.setAttribute("aria-activedescendant", `suggestion-${index}`);
+    }
 }
+/**
+ * Redirige vers la page de détails
+ */
+function selectSuggestion(index) {
+    const suggestion = currentSuggestions[index];
+    if (!suggestion)
+        return;
+    // Redirection vers details.html avec les bons paramètres
+    window.location.href = `./details.html?type=${suggestion.mediaType}&id=${suggestion.id}`;
+}
+async function fetchTmdbSuggestions(query) {
+    if (!query.trim()) {
+        clearSuggestions();
+        return;
+    }
+    try {
+        const url = `${SEARCH_URL}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`;
+        const response = await fetch(url);
+        const data = await response.json();
+        // On formate et on filtre les null (les stars supprimées)
+        const suggestions = (data.results || [])
+            .map(formatSuggestion)
+            .filter((item) => item !== null)
+            .slice(0, 8);
+        updateSuggestions(suggestions);
+    }
+    catch (error) {
+        console.error("Erreur suggestions:", error);
+    }
+}
+// --- Événements ---
+function onInput(event) {
+    const value = event.target.value;
+    if (debounceTimer)
+        window.clearTimeout(debounceTimer);
+    debounceTimer = window.setTimeout(() => {
+        fetchTmdbSuggestions(value);
+    }, 250);
+}
+function onKeyDown(event) {
+    if (!suggestionsList || !suggestionsList.classList.contains("active"))
+        return;
+    const itemCount = suggestionsList.children.length;
+    switch (event.key) {
+        case "ArrowDown":
+            event.preventDefault();
+            activeSuggestion = Math.min(activeSuggestion + 1, itemCount - 1);
+            highlightSuggestion(activeSuggestion);
+            break;
+        case "ArrowUp":
+            event.preventDefault();
+            activeSuggestion = Math.max(activeSuggestion - 1, 0);
+            highlightSuggestion(activeSuggestion);
+            break;
+        case "Enter":
+            event.preventDefault();
+            if (activeSuggestion >= 0) {
+                selectSuggestion(activeSuggestion);
+            }
+            break;
+        case "Escape":
+            clearSuggestions();
+            break;
+    }
+}
+if (searchInput) {
+    searchInput.addEventListener("input", onInput);
+    searchInput.addEventListener("keydown", onKeyDown);
+    // Délai sur le blur pour permettre au clic sur la suggestion de passer avant la fermeture
+    searchInput.addEventListener("blur", () => {
+        setTimeout(clearSuggestions, 200);
+    });
+}
+// Fermer si on clique ailleurs
+document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!target.closest(".search-autocomplete")) {
+        clearSuggestions();
+    }
+});
+// --- Fonctions pour l'affichage des sections (Films/Séries populaires) ---
+async function fetchHomeSelection(type, containerSelector, limit = 6) {
+    const container = document.querySelector(containerSelector);
+    if (!container)
+        return;
+    const url = `${BASE_URL}/${type}/popular?api_key=${API_KEY}&language=fr-FR&page=1`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const items = (data.results || []).slice(0, limit);
+        container.innerHTML = items.map(renderCard).join("");
+    }
+    catch (error) {
+        console.error("Erreur chargement films:", error);
+    }
+}
+// Initialisation des listes de la page d'accueil
+fetchHomeSelection("movie", "#films .cards-grid");
+fetchHomeSelection("tv", "#series .cards-grid");

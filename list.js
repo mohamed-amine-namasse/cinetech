@@ -30,6 +30,7 @@ function renderCard(item) {
   `;
 }
 function renderPagination(page, totalPages) {
+    var _a, _b;
     if (!pagination)
         return;
     const previousDisabled = page <= 1 ? "disabled" : "";
@@ -39,12 +40,10 @@ function renderPagination(page, totalPages) {
     <span>Page ${page} sur ${totalPages}</span>
     <button ${nextDisabled} data-action="next">Suivant</button>
   `;
-    pagination
-        .querySelector("button[data-action=prev]")
-        ?.addEventListener("click", () => changePage(page - 1));
-    pagination
-        .querySelector("button[data-action=next]")
-        ?.addEventListener("click", () => changePage(page + 1));
+    (_a = pagination
+        .querySelector("button[data-action=prev]")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", () => changePage(page - 1));
+    (_b = pagination
+        .querySelector("button[data-action=next]")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", () => changePage(page + 1));
 }
 function changePage(newPage) {
     if (newPage < 1)

@@ -1,7 +1,3 @@
-declare var API_KEY: string;
-declare var BASE_URL: string;
-declare var IMAGE_BASE: string;
-
 const listGrid: HTMLElement | null = document.getElementById("list-grid");
 const pagination: HTMLElement | null = document.getElementById("pagination");
 const type: string = document.body.dataset.listType || "movie";

@@ -1,13 +1,16 @@
 "use strict";
 
 interface Suggestion {
+  id: number;
   title: string;
   type: string;
+  mediaType: string;
   year: string;
   value: string;
 }
 
 type TmdbItem = {
+  id: number;
   title?: string;
   name?: string;
   media_type?: string;
@@ -15,9 +18,6 @@ type TmdbItem = {
   first_air_date?: string;
 };
 
-const API_KEY: string = "2add3b68b231e4e8373050f53498e68f";
-const BASE_URL: string = "https://api.themoviedb.org/3";
-const IMAGE_BASE: string = "https://image.tmdb.org/t/p/w500";
 const SEARCH_URL = "https://api.themoviedb.org/3/search/multi";
 const searchInput = document.querySelector<HTMLInputElement>(
   ".header-search-input",
@@ -25,26 +25,32 @@ const searchInput = document.querySelector<HTMLInputElement>(
 const suggestionsList = document.querySelector<HTMLUListElement>(
   ".search-suggestions",
 );
+
 let activeSuggestion = -1;
 let currentSuggestions: Suggestion[] = [];
 let debounceTimer: number | null = null;
 
-function formatSuggestion(item: TmdbItem): Suggestion {
+/**
+ * Formate un item de l'API en objet Suggestion (sans les Stars)
+ */
+function formatSuggestion(item: TmdbItem): Suggestion | null {
+  // On ignore les personnes (stars)
+  if (item.media_type === "person") return null;
+
   const title = item.title || item.name || "Suggestion";
-  const type =
-    item.media_type === "movie"
-      ? "Film"
-      : item.media_type === "tv"
-        ? "Série"
-        : item.media_type === "person"
-          ? "Star"
-          : "Résultat";
+  const isMovie = item.media_type === "movie" || !!item.title;
+
+  const typeLabel = isMovie ? "Film" : "Série";
+  const mediaType = isMovie ? "movie" : "tv";
+
   const year = item.release_date || item.first_air_date || "";
   const yearText = year ? year.slice(0, 4) : "";
 
   return {
+    id: item.id,
     title,
-    type,
+    type: typeLabel,
+    mediaType: mediaType,
     year: yearText,
     value: title,
   };
@@ -52,7 +58,6 @@ function formatSuggestion(item: TmdbItem): Suggestion {
 
 function clearSuggestions(): void {
   if (!suggestionsList || !searchInput) return;
-
   suggestionsList.innerHTML = "";
   suggestionsList.classList.remove("active");
   searchInput.setAttribute("aria-expanded", "false");
@@ -60,10 +65,13 @@ function clearSuggestions(): void {
   currentSuggestions = [];
 }
 
+/**
+ * Met à jour le DOM de la liste de suggestions
+ */
 function updateSuggestions(items: Suggestion[]): void {
   if (!suggestionsList || !searchInput) return;
-
   suggestionsList.innerHTML = "";
+
   if (!items.length) {
     clearSuggestions();
     return;
@@ -72,98 +80,87 @@ function updateSuggestions(items: Suggestion[]): void {
   currentSuggestions = items;
 
   items.forEach((suggestion, index) => {
-    const item = document.createElement("li");
-    item.setAttribute("role", "option");
-    item.setAttribute("aria-selected", "false");
-    item.innerHTML = `${suggestion.title}<span class="suggestion-type">${suggestion.type}</span>${suggestion.year ? `<span class="suggestion-year">${suggestion.year}</span>` : ""}`;
-    item.addEventListener("click", () => {
+    const li = document.createElement("li");
+    li.setAttribute("role", "option");
+    li.id = `suggestion-${index}`;
+    li.innerHTML = `
+      <div class="suggestion-info">
+        <span class="suggestion-title">${suggestion.title}</span>
+        <span class="suggestion-meta">${suggestion.year} • ${suggestion.type}</span>
+      </div>
+    `;
+
+    // Événement de clic pour la redirection
+    li.addEventListener("click", () => {
       selectSuggestion(index);
     });
-    suggestionsList.appendChild(item);
+
+    suggestionsList.appendChild(li);
   });
 
   suggestionsList.classList.add("active");
   searchInput.setAttribute("aria-expanded", "true");
 }
 
+function highlightSuggestion(index: number): void {
+  if (!suggestionsList) return;
+  Array.from(suggestionsList.children).forEach((child, i) => {
+    child.classList.toggle("focused", i === index);
+  });
+  if (index >= 0) {
+    searchInput?.setAttribute("aria-activedescendant", `suggestion-${index}`);
+  }
+}
+
+/**
+ * Redirige vers la page de détails
+ */
 function selectSuggestion(index: number): void {
   const suggestion = currentSuggestions[index];
-  if (!suggestion || !searchInput) return;
+  if (!suggestion) return;
 
-  searchInput.value = suggestion.value;
-  clearSuggestions();
+  // Redirection vers details.html avec les bons paramètres
+  window.location.href = `./details.html?type=${suggestion.mediaType}&id=${suggestion.id}`;
 }
 
 async function fetchTmdbSuggestions(query: string): Promise<void> {
-  if (!query || query.length < 2) {
+  if (!query.trim()) {
     clearSuggestions();
     return;
   }
-
-  if (!API_KEY || API_KEY === "VOTRE_API_KEY_TMDB") {
-    clearSuggestions();
-    console.warn("TMDB API key manquante ou invalide.");
-    return;
-  }
-
-  const url = `${SEARCH_URL}?api_key=${API_KEY}&language=fr-FR&query=${encodeURIComponent(query)}&include_adult=false&page=1`;
 
   try {
+    const url = `${SEARCH_URL}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`;
     const response = await fetch(url);
-    if (!response.ok) {
-      clearSuggestions();
-      return;
-    }
-
     const data = await response.json();
-    const items = (data.results || [])
-      .filter((item: TmdbItem) =>
-        ["movie", "tv", "person"].includes(item.media_type || ""),
-      )
-      .slice(0, 8)
-      .map(formatSuggestion);
 
-    updateSuggestions(items);
+    // On formate et on filtre les null (les stars supprimées)
+    const suggestions = (data.results || [])
+      .map(formatSuggestion)
+      .filter((item: Suggestion | null): item is Suggestion => item !== null)
+      .slice(0, 8);
+
+    updateSuggestions(suggestions);
   } catch (error) {
-    clearSuggestions();
-    console.error("Erreur TMDB:", error);
+    console.error("Erreur suggestions:", error);
   }
 }
 
-function highlightSuggestion(index: number): void {
-  if (!suggestionsList) return;
-
-  const itemNodes = Array.from(suggestionsList.children);
-  itemNodes.forEach((node, idx) => {
-    if (idx === index) {
-      node.classList.add("active");
-      node.setAttribute("aria-selected", "true");
-      node.scrollIntoView({ block: "nearest" });
-    } else {
-      node.classList.remove("active");
-      node.setAttribute("aria-selected", "false");
-    }
-  });
-}
+// --- Événements ---
 
 function onInput(event: Event): void {
-  const target = event.target as HTMLInputElement | null;
-  const value = target?.value.trim() ?? "";
-
-  if (debounceTimer) {
-    window.clearTimeout(debounceTimer);
-  }
+  const value = (event.target as HTMLInputElement).value;
+  if (debounceTimer) window.clearTimeout(debounceTimer);
 
   debounceTimer = window.setTimeout(() => {
     fetchTmdbSuggestions(value);
-  }, 220);
+  }, 250);
 }
 
 function onKeyDown(event: KeyboardEvent): void {
   if (!suggestionsList || !suggestionsList.classList.contains("active")) return;
 
   const itemCount = suggestionsList.children.length;
-  if (!itemCount) return;
 
   switch (event.key) {
     case "ArrowDown":
@@ -180,14 +177,10 @@ function onKeyDown(event: KeyboardEvent): void {
       event.preventDefault();
       if (activeSuggestion >= 0) {
         selectSuggestion(activeSuggestion);
-      } else {
-        clearSuggestions();
       }
       break;
     case "Escape":
       clearSuggestions();
-      break;
-    default:
       break;
   }
 }
@@ -195,16 +188,42 @@ function onKeyDown(event: KeyboardEvent): void {
 if (searchInput) {
   searchInput.addEventListener("input", onInput);
   searchInput.addEventListener("keydown", onKeyDown);
+  // Délai sur le blur pour permettre au clic sur la suggestion de passer avant la fermeture
   searchInput.addEventListener("blur", () => {
-    window.setTimeout(() => {
-      clearSuggestions();
-    }, 120);
+    setTimeout(clearSuggestions, 200);
   });
 }
 
-document.addEventListener("click", (event: MouseEvent) => {
-  const target = event.target as HTMLElement | null;
-  if (!target?.closest || !target.closest(".search-autocomplete")) {
+// Fermer si on clique ailleurs
+document.addEventListener("click", (event) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest(".search-autocomplete")) {
     clearSuggestions();
   }
 });
+
+// --- Fonctions pour l'affichage des sections (Films/Séries populaires) ---
+
+async function fetchHomeSelection(
+  type: string,
+  containerSelector: string,
+  limit: number = 6,
+) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+
+  const url = `${BASE_URL}/${type}/popular?api_key=${API_KEY}&language=fr-FR&page=1`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    const items = (data.results || []).slice(0, limit);
+    container.innerHTML = items.map(renderCard).join("");
+  } catch (error) {
+    console.error("Erreur chargement films:", error);
+  }
+}
+
+// Initialisation des listes de la page d'accueil
+fetchHomeSelection("movie", "#films .cards-grid");
+fetchHomeSelection("tv", "#series .cards-grid");
