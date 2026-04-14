@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cinetech | Accueil</title>
+    <title>Cinetech | Séries</title>
     <link rel="stylesheet" href="style.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
     />
   </head>
-  <body>
+  <body data-list-type="tv">
     <header>
       <div class="container">
         <div class="search-autocomplete">
@@ -41,45 +41,31 @@
           ></ul>
         </div>
       </div>
-
       <nav>
         <a href="./index.html"
           ><strong><span class="title">Cinetech</span></strong></a
         >
-
         <div class="links">
-          <a href="./index.html"> Accueil </a>
-          <a href="./movies.html"> Films </a>
-          <a href="./series.html"> Séries </a>
+          <a href="./index.html">Accueil</a>
+          <a href="./movies.html">Films</a>
+          <a href="./series.html">Séries</a>
         </div>
       </nav>
     </header>
     <main>
-      <section class="hero">
-        <h1>Bienvenue sur Cinetech</h1>
-        <p>Une sélection de films et de séries pour vos prochaines soirées.</p>
-        <div class="hero-actions">
-          <a class="btn" href="movies.html">Tous les films</a>
-          <a class="btn btn-outline" href="series.html">Toutes les séries</a>
-        </div>
+      <section class="page-intro">
+        <h1>Séries</h1>
+        <p>Parcourez les séries les plus populaires avec pagination.</p>
       </section>
-
-      <section id="films" class="section-selection">
-        <div class="section-header">
-          <h2>Sélection de films</h2>
-          <a href="movies.html">Voir plus</a>
+      <section class="list-controls">
+        <div>
+          <h2>Séries populaires</h2>
         </div>
-        <div class="cards-grid"></div>
+        <div class="pagination" id="pagination"></div>
       </section>
-
-      <section id="series" class="section-selection">
-        <div class="section-header">
-          <h2>Sélection de séries</h2>
-          <a href="series.html">Voir plus</a>
-        </div>
-        <div class="cards-grid"></div>
-      </section>
+      <section class="cards-grid" id="list-grid"></section>
     </main>
     <script src="./index.js" defer></script>
+    <script src="./list.js" defer></script>
   </body>
 </html>

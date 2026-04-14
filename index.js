@@ -1,11 +1,14 @@
 "use strict";
 const API_KEY = "2add3b68b231e4e8373050f53498e68f";
+const BASE_URL = "https://api.themoviedb.org/3";
 const SEARCH_URL = "https://api.themoviedb.org/3/search/multi";
+const IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 const searchInput = document.querySelector(".header-search-input");
 const suggestionsList = document.querySelector(".search-suggestions");
 let activeSuggestion = -1;
 let currentSuggestions = [];
 let debounceTimer = null;
+
 function formatSuggestion(item) {
   const title = item.title || item.name || "Suggestion";
   const type =
@@ -25,6 +28,7 @@ function formatSuggestion(item) {
     value: title,
   };
 }
+
 function clearSuggestions() {
   if (!suggestionsList || !searchInput) return;
   suggestionsList.innerHTML = "";
@@ -33,6 +37,7 @@ function clearSuggestions() {
   activeSuggestion = -1;
   currentSuggestions = [];
 }
+
 function updateSuggestions(items) {
   if (!suggestionsList || !searchInput) return;
   suggestionsList.innerHTML = "";
@@ -54,12 +59,14 @@ function updateSuggestions(items) {
   suggestionsList.classList.add("active");
   searchInput.setAttribute("aria-expanded", "true");
 }
+
 function selectSuggestion(index) {
   const suggestion = currentSuggestions[index];
   if (!suggestion || !searchInput) return;
   searchInput.value = suggestion.value;
   clearSuggestions();
 }
+
 async function fetchTmdbSuggestions(query) {
   if (!query || query.length < 2) {
     clearSuggestions();
@@ -90,6 +97,7 @@ async function fetchTmdbSuggestions(query) {
     console.error("Erreur TMDB:", error);
   }
 }
+
 function highlightSuggestion(index) {
   if (!suggestionsList) return;
   const itemNodes = Array.from(suggestionsList.children);
@@ -104,6 +112,7 @@ function highlightSuggestion(index) {
     }
   });
 }
+
 function onInput(event) {
   const target = event.target;
   const value = target?.value.trim() ?? "";
@@ -114,6 +123,7 @@ function onInput(event) {
     fetchTmdbSuggestions(value);
   }, 220);
 }
+
 function onKeyDown(event) {
   if (!suggestionsList || !suggestionsList.classList.contains("active")) return;
   const itemCount = suggestionsList.children.length;
@@ -144,6 +154,7 @@ function onKeyDown(event) {
       break;
   }
 }
+
 if (searchInput) {
   searchInput.addEventListener("input", onInput);
   searchInput.addEventListener("keydown", onKeyDown);
@@ -153,9 +164,56 @@ if (searchInput) {
     }, 120);
   });
 }
+
 document.addEventListener("click", (event) => {
   const target = event.target;
   if (!target?.closest || !target.closest(".search-autocomplete")) {
     clearSuggestions();
   }
 });
+
+function renderCard(item) {
+  const title = item.title || item.name || "Titre inconnu";
+  const date = item.release_date || item.first_air_date || "";
+  const year = date ? date.slice(0, 4) : "";
+  const poster = item.poster_path
+    ? `${IMAGE_BASE}${item.poster_path}`
+    : "https://via.placeholder.com/300x450?text=Pas+d'affiche";
+  const type = item.media_type || (item.title ? "movie" : "tv");
+  const linkType = type === "movie" ? "movie" : "tv";
+  return `
+    <article class="card">
+      <a href="./details.html?type=${linkType}&id=${item.id}" aria-label="Ouvrir la fiche de ${title}">
+        <div class="card-image" style="background-image:url('${poster}')"></div>
+        <div class="card-body">
+          <h3>${title}</h3>
+          <p class="card-meta">${year} • ${linkType === "movie" ? "Film" : "Série"}</p>
+        </div>
+      </a>
+    </article>
+  `;
+}
+
+async function fetchHomeSelection(type, containerSelector, limit = 6) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+  const url = `${BASE_URL}/${type}/popular?api_key=${API_KEY}&language=fr-FR&page=1`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      container.innerHTML = "<p>Impossible de charger la sélection.</p>";
+      return;
+    }
+    const data = await response.json();
+    const items = (data.results || []).slice(0, limit);
+    container.innerHTML = items.map(renderCard).join("");
+  } catch (error) {
+    container.innerHTML = "<p>Erreur de chargement.</p>";
+    console.error("Erreur TMDB accueil:", error);
+  }
+}
+
+if (document.body.className || document.querySelector("#films .cards-grid")) {
+  fetchHomeSelection("movie", "#films .cards-grid", 6);
+  fetchHomeSelection("tv", "#series .cards-grid", 6);
+}

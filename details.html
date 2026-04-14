@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cinetech | Accueil</title>
+    <title>Cinetech | Détail</title>
     <link rel="stylesheet" href="style.css" />
     <link
       rel="stylesheet"
@@ -41,45 +41,43 @@
           ></ul>
         </div>
       </div>
-
       <nav>
         <a href="./index.html"
           ><strong><span class="title">Cinetech</span></strong></a
         >
-
         <div class="links">
-          <a href="./index.html"> Accueil </a>
-          <a href="./movies.html"> Films </a>
-          <a href="./series.html"> Séries </a>
+          <a href="./index.html">Accueil</a>
+          <a href="./movies.html">Films</a>
+          <a href="./series.html">Séries</a>
         </div>
       </nav>
     </header>
     <main>
-      <section class="hero">
-        <h1>Bienvenue sur Cinetech</h1>
-        <p>Une sélection de films et de séries pour vos prochaines soirées.</p>
-        <div class="hero-actions">
-          <a class="btn" href="movies.html">Tous les films</a>
-          <a class="btn btn-outline" href="series.html">Toutes les séries</a>
+      <section class="detail-page">
+        <div class="detail-grid">
+          <div class="detail-poster" id="detail-poster"></div>
+          <div class="detail-info">
+            <p class="detail-kind" id="detail-kind"></p>
+            <h1 id="detail-title"></h1>
+            <p class="detail-subtitle" id="detail-subtitle"></p>
+            <div class="info-tags" id="detail-tags"></div>
+            <p class="detail-overview" id="detail-overview"></p>
+            <div class="detail-extra" id="detail-extra"></div>
+          </div>
         </div>
       </section>
-
-      <section id="films" class="section-selection">
-        <div class="section-header">
-          <h2>Sélection de films</h2>
-          <a href="movies.html">Voir plus</a>
-        </div>
-        <div class="cards-grid"></div>
+      <section class="detail-cast">
+        <h2>Acteurs principaux</h2>
+        <div class="cast-list" id="cast-list"></div>
       </section>
-
-      <section id="series" class="section-selection">
+      <section class="similar-section">
         <div class="section-header">
-          <h2>Sélection de séries</h2>
-          <a href="series.html">Voir plus</a>
+          <h2>Suggéré pour vous</h2>
         </div>
-        <div class="cards-grid"></div>
+        <div class="similar-grid" id="similar-grid"></div>
       </section>
     </main>
     <script src="./index.js" defer></script>
+    <script src="./details.js" defer></script>
   </body>
 </html>
