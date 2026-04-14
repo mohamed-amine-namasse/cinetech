@@ -9,6 +9,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+    />
   </head>
   <body>
     <header>
@@ -55,13 +59,24 @@
       </nav>
     </header>
     <main>
-      <section class="hero">
-        <h1>Bienvenue sur Cinetech</h1>
-        <p>Une sélection de films et de séries pour vos prochaines soirées.</p>
-        <div class="hero-actions">
-          <a class="btn" href="movies.html">Tous les films</a>
-          <a class="btn btn-outline" href="series.html">Toutes les séries</a>
+      <section class="hero swiper hero-swiper">
+        <div class="swiper-wrapper" id="hero-wrapper"></div>
+
+        <div class="hero-content">
+          <h1>Bienvenue sur Cinetech</h1>
+          <p>
+            Une sélection de films et de séries pour vos prochaines soirées.
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="movies.html">Tous les films</a>
+            <a class="btn btn-outline" href="series.html">Toutes les séries</a>
+          </div>
         </div>
+
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+
+        <div class="swiper-pagination"></div>
       </section>
 
       <section id="films" class="section-selection">
@@ -80,6 +95,8 @@
         <div class="cards-grid"></div>
       </section>
     </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="./config/config.js" defer></script>
     <script src="./index.js" defer></script>
     <script src="./list.js" defer></script>

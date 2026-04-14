@@ -482,3 +482,41 @@ body main .hero {
     align-items: flex-start;
   }
 }
+
+.hero {
+  position: relative;
+  height: 80vh; /* Hauteur de la bannière */
+  overflow: hidden;
+}
+
+.hero-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10; /* Passe par dessus les images */
+  text-align: center;
+  color: white;
+  width: 100%;
+  text-shadow: 0 2px 10px rgba(192, 34, 34, 0.8);
+}
+
+.hero-swiper .swiper-slide {
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+/* Overlay sombre pour que le texte soit lisible */
+.hero-swiper .swiper-slide::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.swiper-pagination-bullet {
+  background: white;
+}

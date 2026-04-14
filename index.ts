@@ -1,5 +1,5 @@
 "use strict";
-
+declare var Swiper: any;
 interface Suggestion {
   id: number;
   title: string;
@@ -202,6 +202,52 @@ document.addEventListener("click", (event) => {
   }
 });
 
+// Fonction pour charger le carrousel Hero
+async function fetchHeroMovies() {
+  const wrapper = document.getElementById("hero-wrapper");
+  if (!wrapper) return;
+
+  const url = `${BASE_URL}/trending/movie/week?api_key=${API_KEY}&language=fr-FR`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    const movies = (data.results || []).slice(0, 5);
+
+    wrapper.innerHTML = movies
+      .map(
+        (movie: any) => `
+      <div class="swiper-slide" style="background-image: url('https://image.tmdb.org/t/p/original${movie.backdrop_path}')">
+      </div>
+    `,
+      )
+      .join("");
+
+    // Initialisation de Swiper pour le Hero
+    new Swiper(".hero-swiper", {
+      effect: "fade",
+      loop: true,
+      autoplay: {
+        delay: 5000,
+        disableOnInteraction: false,
+      },
+      pagination: {
+        el: ".swiper-pagination",
+        clickable: true,
+      },
+      // ⚠️ AJOUTE CE BLOC ICI POUR ACTIVER LES BOUTONS
+      navigation: {
+        nextEl: ".swiper-button-next",
+        prevEl: ".swiper-button-prev",
+      },
+    });
+  } catch (error) {
+    console.error("Erreur Hero Swiper:", error);
+  }
+}
+
+// Appelle la fonction au chargement
+fetchHeroMovies();
 // --- Fonctions pour l'affichage des sections (Films/Séries populaires) ---
 
 async function fetchHomeSelection(
