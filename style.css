@@ -5,6 +5,7 @@
   --red: #ea0505;
   --orange: #ef7b45;
   --white: #ffffff;
+  --swiper-theme-color: var(--green);
 }
 
 * {
@@ -17,7 +18,7 @@ body {
   font-family: "Poppins", sans-serif;
 }
 body h1 {
-  color: var(--white);
+  color: var(--black);
 }
 body a {
   text-decoration: none;
@@ -260,7 +261,7 @@ body main .hero {
 .detail-cast,
 .similar-section,
 .list-controls {
-  padding: 60px 6%;
+  padding: 20px 6%;
 }
 
 .section-header,
@@ -270,8 +271,15 @@ body main .hero {
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
+.list-controls-mv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
 .section-header h2,
 .list-controls h2 {
   font-size: 1.6rem;
@@ -520,5 +528,8 @@ body main .hero {
 
 .swiper-pagination-bullet {
   background: white;
-  color: yellow;
+}
+
+#main {
+  color: var(--white);
 }
