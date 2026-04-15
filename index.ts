@@ -235,7 +235,7 @@ async function fetchHeroMovies() {
         el: ".swiper-pagination",
         clickable: true,
       },
-      // ⚠️ AJOUTE CE BLOC ICI POUR ACTIVER LES BOUTONS
+
       navigation: {
         nextEl: ".swiper-button-next",
         prevEl: ".swiper-button-prev",
