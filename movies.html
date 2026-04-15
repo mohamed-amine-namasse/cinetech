@@ -40,6 +40,9 @@
             aria-label="Suggestions de recherche"
           ></ul>
         </div>
+        <button id="openLoginModal" class="btn-login active btn">
+          <p>Connexion</p>
+        </button>
       </div>
       <nav>
         <a href="./index.html"
@@ -62,6 +65,35 @@
       </section>
       <section class="cards-grid" id="list-grid"></section>
     </main>
+    <div id="loginModal" class="loginModal">
+      <div class="modal-content">
+        <button class="close-modal"><p>&times;</p></button>
+        <h2>Connexion</h2>
+        <form id="loginForm">
+          <div class="input-group">
+            <label for="login">Login</label>
+            <input
+              type="text"
+              class="login"
+              placeholder="votre login"
+              required
+            />
+          </div>
+          <div class="input-group">
+            <label for="password">Mot de passe</label>
+            <input
+              type="password"
+              class="password"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button type="button" class="btn btn-connection" tabindex="-1">
+            Se connecter
+          </button>
+        </form>
+      </div>
+    </div>
     <script src="./config/config.js"></script>
     <script src="./index.js"></script>
     <script src="./list.js"></script>

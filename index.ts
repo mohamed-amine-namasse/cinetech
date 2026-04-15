@@ -1,5 +1,50 @@
 "use strict";
 declare var Swiper: any;
+let modalLogin: boolean = false;
+let token: string | null = null;
+const btnLogin = document.querySelector(".btn-login") as HTMLButtonElement;
+
+if (btnLogin) {
+  btnLogin.addEventListener("click", function () {
+    toggleModale();
+    validateConnexion();
+  });
+}
+
+const disconect = function () {
+  window.location.reload();
+};
+
+const headerCloser = document.querySelector("header") as HTMLElement;
+if (headerCloser) {
+  headerCloser.addEventListener("click", function (e) {
+    if (!(e.target as HTMLElement).closest("button")) {
+      modalLogin = false;
+      document.querySelector("main")!.classList.remove("blured");
+      const loginModal = document.querySelector(".loginModal");
+      if (loginModal) loginModal.classList.remove("active");
+
+      document
+        .querySelectorAll<HTMLButtonElement>(".btn-view")
+        .forEach((btn) => {
+          btn.setAttribute("tabindex", "0");
+          btn.classList.add("active");
+        });
+      document.querySelector("body")!.classList.remove("fixed");
+      document.querySelector("main")!.classList.remove("invisible");
+    }
+  });
+}
+
+const btnCloseModale = document.querySelector(
+  ".close-modal",
+) as HTMLButtonElement;
+if (btnCloseModale) {
+  btnCloseModale.addEventListener("click", function () {
+    toggleModale();
+  });
+}
+
 interface Suggestion {
   id: number;
   title: string;
@@ -30,11 +75,7 @@ let activeSuggestion = -1;
 let currentSuggestions: Suggestion[] = [];
 let debounceTimer: number | null = null;
 
-/**
- * Formate un item de l'API en objet Suggestion (sans les Stars)
- */
 function formatSuggestion(item: TmdbItem): Suggestion | null {
-  // On ignore les personnes (stars)
   if (item.media_type === "person") return null;
 
   const title = item.title || item.name || "Suggestion";
@@ -65,9 +106,6 @@ function clearSuggestions(): void {
   currentSuggestions = [];
 }
 
-/**
- * Met à jour le DOM de la liste de suggestions
- */
 function updateSuggestions(items: Suggestion[]): void {
   if (!suggestionsList || !searchInput) return;
   suggestionsList.innerHTML = "";
@@ -90,7 +128,6 @@ function updateSuggestions(items: Suggestion[]): void {
       </div>
     `;
 
-    // Événement de clic pour la redirection
     li.addEventListener("click", () => {
       selectSuggestion(index);
     });
@@ -112,16 +149,15 @@ function highlightSuggestion(index: number): void {
   }
 }
 
-/**
- * Redirige vers la page de détails
- */
 function selectSuggestion(index: number): void {
   const suggestion = currentSuggestions[index];
   if (!suggestion) return;
-
-  // Redirection vers details.html avec les bons paramètres
   window.location.href = `./details.html?type=${suggestion.mediaType}&id=${suggestion.id}`;
 }
+
+// Assure-toi que API_KEY est bien défini dans ton config.js
+declare var API_KEY: string;
+declare var BASE_URL: string;
 
 async function fetchTmdbSuggestions(query: string): Promise<void> {
   if (!query.trim()) {
@@ -134,7 +170,6 @@ async function fetchTmdbSuggestions(query: string): Promise<void> {
     const response = await fetch(url);
     const data = await response.json();
 
-    // On formate et on filtre les null (les stars supprimées)
     const suggestions = (data.results || [])
       .map(formatSuggestion)
       .filter((item: Suggestion | null): item is Suggestion => item !== null)
@@ -145,8 +180,6 @@ async function fetchTmdbSuggestions(query: string): Promise<void> {
     console.error("Erreur suggestions:", error);
   }
 }
-
-// --- Événements ---
 
 function onInput(event: Event): void {
   const value = (event.target as HTMLInputElement).value;
@@ -188,13 +221,11 @@ function onKeyDown(event: KeyboardEvent): void {
 if (searchInput) {
   searchInput.addEventListener("input", onInput);
   searchInput.addEventListener("keydown", onKeyDown);
-  // Délai sur le blur pour permettre au clic sur la suggestion de passer avant la fermeture
   searchInput.addEventListener("blur", () => {
     setTimeout(clearSuggestions, 200);
   });
 }
 
-// Fermer si on clique ailleurs
 document.addEventListener("click", (event) => {
   const target = event.target as HTMLElement;
   if (!target.closest(".search-autocomplete")) {
@@ -202,7 +233,6 @@ document.addEventListener("click", (event) => {
   }
 });
 
-// Fonction pour charger le carrousel Hero
 async function fetchHeroMovies() {
   const wrapper = document.getElementById("hero-wrapper");
   if (!wrapper) return;
@@ -223,7 +253,6 @@ async function fetchHeroMovies() {
       )
       .join("");
 
-    // Initialisation de Swiper pour le Hero
     new Swiper(".hero-swiper", {
       effect: "fade",
       loop: true,
@@ -235,7 +264,6 @@ async function fetchHeroMovies() {
         el: ".swiper-pagination",
         clickable: true,
       },
-
       navigation: {
         nextEl: ".swiper-button-next",
         prevEl: ".swiper-button-prev",
@@ -246,9 +274,9 @@ async function fetchHeroMovies() {
   }
 }
 
-// Appelle la fonction au chargement
 fetchHeroMovies();
-// --- Fonctions pour l'affichage des sections (Films/Séries populaires) ---
+
+declare function renderCard(item: any): string; // Assure-toi que cette fonction existe dans ton list.js
 
 async function fetchHomeSelection(
   type: string,
@@ -270,6 +298,197 @@ async function fetchHomeSelection(
   }
 }
 
-// Initialisation des listes de la page d'accueil
 fetchHomeSelection("movie", "#films .cards-grid");
 fetchHomeSelection("tv", "#series .cards-grid");
+
+// --- Gestion Utilisateurs / Connexion ---
+
+function validateConnexion() {
+  const loginInput = document.querySelector(".login") as HTMLInputElement;
+  const passwordInput = document.querySelector(".password") as HTMLInputElement;
+  const btnInscription = document.querySelector(
+    ".btn-inscription",
+  ) as HTMLButtonElement;
+  const btnConnexion = document.querySelector(
+    ".btn-connection",
+  ) as HTMLButtonElement;
+
+  if (loginInput && passwordInput && btnInscription && btnConnexion) {
+    if (loginInput.value.length > 2 && passwordInput.value.length > 2) {
+      btnConnexion.setAttribute("tabindex", "0");
+      btnConnexion.classList.add("active");
+      btnInscription.setAttribute("tabindex", "0");
+      btnInscription.classList.add("active");
+      btnConnexion.addEventListener("click", connection);
+      btnInscription.addEventListener("click", inscription);
+    } else {
+      btnConnexion.setAttribute("tabindex", "-1");
+      btnConnexion.classList.remove("active");
+      btnInscription.setAttribute("tabindex", "-1");
+      btnInscription.classList.remove("active");
+      btnConnexion.removeEventListener("click", connection);
+      btnInscription.removeEventListener("click", inscription);
+    }
+  }
+}
+
+document.addEventListener("keyup", function () {
+  validateConnexion();
+});
+
+async function inscription() {
+  const username: string = (
+    document.querySelector(".login") as HTMLInputElement
+  ).value;
+  const password: string = (
+    document.querySelector(".password") as HTMLInputElement
+  ).value;
+
+  const response = await fetch("http://localhost:3000/users/sign_up", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      username: username,
+      password: password,
+    }),
+  });
+
+  type MonToken = {
+    token: string;
+    user: "admin" | null;
+  };
+
+  const data: MonToken = await response.json();
+  if (response.ok) {
+    token = data.token;
+    toggleModale();
+    document.querySelector<HTMLElement>("header")!.classList.add("connected");
+  }
+}
+
+async function connection() {
+  const username: string = (
+    document.querySelector(".login") as HTMLInputElement
+  ).value;
+  const password: string = (
+    document.querySelector(".password") as HTMLInputElement
+  ).value;
+
+  const response = await fetch("http://localhost:3000/users/log_in", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      username: username,
+      password: password,
+    }),
+  });
+
+  type NewUser = {
+    token: string;
+    user: "admin" | null;
+    message: string;
+    userId: number;
+  };
+
+  const data: NewUser = await response.json();
+
+  if (response.ok) {
+    token = data.token;
+    toggleModale();
+    document.querySelector("header")!.classList.add("connected");
+
+    if (data.user === "admin") {
+      document.querySelector("header")?.classList.add("adminHeader");
+    }
+    displayUsers(token);
+  }
+}
+
+const btnLogout = document.querySelector(".btn-logout") as HTMLButtonElement;
+if (btnLogout) {
+  btnLogout.addEventListener("click", function () {
+    token = null;
+    const header = document.querySelector("header") as HTMLElement;
+    if (header) {
+      header.classList.remove("connected");
+      header.classList.remove("adminHeader");
+    }
+
+    const userGrid = document.querySelector(".user-grid");
+    if (userGrid) {
+      userGrid.innerHTML = "";
+    }
+  });
+}
+
+function toggleModale() {
+  modalLogin = !modalLogin;
+  document.querySelector("main")!.classList.toggle("blured");
+  const loginModal = document.querySelector(".loginModal");
+  if (loginModal) loginModal.classList.toggle("active");
+
+  document.querySelectorAll<HTMLButtonElement>(".btn-view").forEach((btn) => {
+    modalLogin
+      ? btn.setAttribute("tabindex", "-1")
+      : btn.setAttribute("tabindex", "0");
+    btn.classList.toggle("active");
+  });
+}
+
+const listener = function () {
+  document.querySelectorAll<HTMLButtonElement>(".btnAdmin").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      promoteAdmin(Number(btn.value), token);
+    });
+  });
+};
+
+async function promoteAdmin(id: number, token: string | null): Promise<void> {
+  const response = await fetch("http://localhost:3000/users/" + id, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token,
+    },
+  });
+
+  if (response.ok) {
+    displayUsers(token);
+  }
+}
+
+async function displayUsers(token: string | null): Promise<void> {
+  const response = await fetch("http://localhost:3000/users", {
+    method: "GET",
+    headers: { Authorization: "Bearer " + token },
+  });
+
+  interface User {
+    id: number;
+    username: string;
+    role: "admin" | null;
+  }
+  type Users = {
+    response: User[];
+  };
+
+  const users: Users = await response.json();
+  const userGrid = document.querySelector(".user-grid");
+
+  if (userGrid) {
+    userGrid.innerHTML = "<h2>Utilisateurs</h2>";
+    if (response.ok) {
+      users.response.forEach((user) => {
+        const card = document.createElement("article");
+        card.classList.add("user-card");
+        card.innerHTML = `<button value="${user.id}" class="${user.role} btn active btnAdmin"> ${user.username}${user.role === "admin" ? "<span>👑</span>" : ""} </button>`;
+        userGrid.appendChild(card);
+      });
+      listener();
+    }
+  }
+}

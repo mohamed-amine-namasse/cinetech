@@ -46,7 +46,7 @@ body header .container {
   padding-bottom: 10px;
   background-color: #e6cc25;
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
 }
 
 body header nav {
@@ -532,4 +532,81 @@ body main .hero {
 
 #main {
   color: var(--white);
+}
+body .loginModal {
+  box-shadow: var(--shadow);
+  position: fixed;
+  z-index: 5;
+  width: 30vw;
+  left: -35vw;
+  top: 25vh;
+  padding: 1vw;
+  border-radius: 1vw;
+  background-color: #eee7ec;
+  padding-top: 5vh;
+  padding-bottom: 5vh;
+  transition: all 0.3s;
+  visibility: hidden;
+}
+body .loginModal.active {
+  left: 35vw;
+  visibility: visible;
+}
+body .loginModal .modal-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-top: 2vw;
+  gap: 2vw;
+}
+body .loginModal .modal-content .close-modal {
+  align-items: center;
+  display: flex;
+  border: none;
+  background: none;
+  height: 4vw;
+  width: 4vw;
+  position: absolute;
+  font-size: 3vw;
+  cursor: pointer;
+  right: 0;
+  top: 0;
+}
+body .loginModal .modal-content * {
+  margin: auto;
+}
+body .loginModal .modal-content h2 {
+  margin-top: 0;
+}
+body .loginModal .modal-content .close-modal {
+  margin-right: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+body .loginModal .modal-content .input-group {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 2vw;
+}
+body .loginModal .modal-content .input-group * {
+  margin-top: 1vw;
+}
+body .loginModal .modal-content .input-group label {
+  margin-left: 0;
+}
+body .loginModal .modal-content .input-group input {
+  margin-right: 0;
+  padding-left: 0.3vw;
+}
+body .loginModal .modal-content button {
+  width: 60%;
+  margin-left: 20%;
+  margin-top: 1vw;
+  margin-bottom: 1vw;
+}
+body .loginModal .modal-content .newChallenger {
+  width: 100%;
+  text-align: center;
 }
