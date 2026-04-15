@@ -64,7 +64,8 @@ body main {
   width: 100%;
   overflow: hidden;
   padding-top: 145px;
-  padding-left: 15px;
+  padding-left: 35px;
+  padding-right: 35px;
   transition: all 0.3s;
   filter: blur(0px);
   visibility: visible;
