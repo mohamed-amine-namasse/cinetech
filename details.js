@@ -11,27 +11,24 @@ const similarGrid = document.getElementById("similar-grid");
 const params = new URLSearchParams(window.location.search);
 const mediaType = params.get("type") === "tv" ? "tv" : "movie";
 const id = params.get("id");
-console.log("Details page loaded - Type:", mediaType, "ID:", id);
 function createTag(text) {
     return `<span class="chip">${text}</span>`;
 }
 function buildPoster(path) {
-    if (!path) {
+    if (!path)
         return "https://via.placeholder.com/500x750?text=Pas+d'affiche";
-    }
     return `${IMAGE_BASE}${path}`;
 }
 function getYear(value) {
     return value ? value.slice(0, 4) : "";
 }
 function getDirector(credits) {
-    var _a, _b, _c, _d;
-    return (((_b = (_a = credits.crew) === null || _a === void 0 ? void 0 : _a.find((member) => member.job === "Director")) === null || _b === void 0 ? void 0 : _b.name) ||
-        ((_d = (_c = credits.crew) === null || _c === void 0 ? void 0 : _c.find((member) => member.job === "Créateur")) === null || _d === void 0 ? void 0 : _d.name) ||
+    return (credits.crew?.find((member) => member.job === "Director")?.name ||
+        credits.crew?.find((member) => member.job === "Créateur")?.name ||
         "Inconnu");
 }
 function renderCast(cast) {
-    if (!(cast === null || cast === void 0 ? void 0 : cast.length))
+    if (!cast?.length)
         return "<p>Aucun acteur trouvé.</p>";
     return cast
         .slice(0, 8)
@@ -44,7 +41,7 @@ function renderCast(cast) {
         .join("");
 }
 function renderSimilar(items) {
-    if (!(items === null || items === void 0 ? void 0 : items.length))
+    if (!items?.length)
         return "<p>Aucune suggestion similaire.</p>";
     return items
         .slice(0, 6)
@@ -57,96 +54,170 @@ function renderSimilar(items) {
       <article class="card card-small">
         <a href="./details.html?type=${mediaType}&id=${item.id}">
           <div class="card-image" style="background-image:url('${poster}')"></div>
-          <div class="card-body">
-            <h3>${title}</h3>
-          </div>
+          <div class="card-body"><h3>${title}</h3></div>
         </a>
       </article>
     `;
     })
         .join("");
 }
-async function loadDetails() {
-    var _a, _b;
-    if (!id) {
-        document.title = "Erreur | Cinetech";
-        if (detailTitle)
-            detailTitle.textContent = "Identifiant manquant";
-        if (detailOverview)
-            detailOverview.textContent = "Impossible de charger cette fiche.";
-        return;
+// --- 1. COMMENTAIRES TMDB ---
+async function fetchTMDBReviews(mediaType, id) {
+    const url = `${BASE_URL}/${mediaType}/${id}/reviews?api_key=${API_KEY}&language=en-US`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const reviews = data.results || [];
+        const container = document.getElementById("tmdb-reviews");
+        if (!container)
+            return;
+        if (reviews.length === 0) {
+            container.innerHTML = "<p>Aucun commentaire TMDB.</p>";
+            return;
+        }
+        container.innerHTML = reviews
+            .slice(0, 3)
+            .map((r) => `
+      <div class="review-card" style="border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <h4>${r.author}</h4>
+        <p style="font-size: 0.85rem; color: #666;">${r.content.substring(0, 200)}...</p>
+      </div>
+    `)
+            .join("");
     }
+    catch (e) {
+        console.error(e);
+    }
+}
+// --- 2. FAVORIS (LocalStorage) ---
+function setupFavoriteButton(mediaId, mediaType, mediaTitle, posterPath) {
+    const token = localStorage.getItem("token");
+    const container = document.getElementById("favorite-action");
+    if (!token || !container)
+        return;
+    const updateUI = () => {
+        const favs = JSON.parse(localStorage.getItem("favorites") || "[]");
+        const isFav = favs.some((f) => f.id === mediaId && f.type === mediaType);
+        container.innerHTML = `<button id="btn-fav" class="btn ${isFav ? "btn-outline" : ""}" style="margin-top:1rem">
+      ${isFav ? "💔 Retirer des favoris" : "❤️ Ajouter aux favoris"}
+    </button>`;
+        document.getElementById("btn-fav")?.addEventListener("click", () => {
+            let current = JSON.parse(localStorage.getItem("favorites") || "[]");
+            if (isFav) {
+                current = current.filter((f) => !(f.id === mediaId && f.type === mediaType));
+            }
+            else {
+                current.push({
+                    id: mediaId,
+                    type: mediaType,
+                    title: mediaTitle,
+                    poster: posterPath,
+                });
+            }
+            localStorage.setItem("favorites", JSON.stringify(current));
+            updateUI();
+        });
+    };
+    updateUI();
+}
+// --- 3. COMMENTAIRES LOCAUX AVEC TYPAGE ---
+function displayLocalComments(mediaId) {
+    const container = document.getElementById("local-comments-list");
+    if (!container)
+        return;
+    // On type le tableau récupéré
+    const all = JSON.parse(localStorage.getItem("local_comments") || "[]");
+    const mine = all.filter((c) => c.media_id === mediaId);
+    const isConnected = !!localStorage.getItem("token");
+    const parents = mine.filter((c) => c.parent_id === null);
+    const replies = mine.filter((c) => c.parent_id !== null);
+    container.innerHTML = parents
+        .map((p) => {
+        const childs = replies.filter((r) => r.parent_id === p.id);
+        return `
+      <div style="background:#f4f4f4; padding:1rem; border-radius:8px; margin-bottom:1rem;">
+        <strong>${p.author}</strong> <small>${p.date}</small>
+        <p>${p.text}</p>
+        ${childs
+            .map((c) => `
+          <div style="margin-left:2rem; border-left:2px solid #ccc; padding-left:1rem; margin-top:0.5rem;">
+            <strong>${c.author}</strong>: ${c.text}
+          </div>
+        `)
+            .join("")}
+        ${isConnected ? `<button class="btn-reply" data-id="${p.id}" style="background:none; border:none; color:blue; cursor:pointer; font-size:0.8rem; margin-top:0.5rem;">Répondre</button>` : ""}
+        <div id="form-${p.id}" style="display:none; margin-top:0.5rem;">
+          <input type="text" id="input-${p.id}" placeholder="Votre réponse..." style="padding:5px; border-radius:4px; border:1px solid #ccc;">
+          <button class="btn-send-reply btn" data-id="${p.id}" style="padding:4px 10px; font-size:0.8rem;">OK</button>
+        </div>
+      </div>
+    `;
+    })
+        .join("");
+    attachCommentEvents(mediaId);
+}
+function attachCommentEvents(mediaId) {
+    document.querySelectorAll(".btn-reply").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            const pid = e.target.dataset.id;
+            const f = document.getElementById(`form-${pid}`);
+            if (f)
+                f.style.display = "block";
+        });
+    });
+    document.querySelectorAll(".btn-send-reply").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            const pid = e.target.dataset.id;
+            const input = document.getElementById(`input-${pid}`);
+            const txt = input.value;
+            if (!txt)
+                return;
+            const all = JSON.parse(localStorage.getItem("local_comments") || "[]");
+            all.push({
+                id: Date.now(),
+                media_id: mediaId,
+                text: txt,
+                author: "Utilisateur",
+                date: new Date().toLocaleDateString(),
+                parent_id: Number(pid),
+            });
+            localStorage.setItem("local_comments", JSON.stringify(all));
+            displayLocalComments(mediaId);
+        });
+    });
+}
+async function loadDetails() {
+    if (!id)
+        return;
     const detailUrl = `${BASE_URL}/${mediaType}/${id}?api_key=${API_KEY}&language=fr-FR`;
     const creditsUrl = `${BASE_URL}/${mediaType}/${id}/credits?api_key=${API_KEY}&language=fr-FR`;
     const similarUrl = `${BASE_URL}/${mediaType}/${id}/similar?api_key=${API_KEY}&language=fr-FR&page=1`;
     try {
-        const [detailRes, creditsRes, similarRes] = await Promise.all([
+        const [dRes, cRes, sRes] = await Promise.all([
             fetch(detailUrl),
             fetch(creditsUrl),
             fetch(similarUrl),
         ]);
-        if (!detailRes.ok || !creditsRes.ok || !similarRes.ok) {
-            throw new Error("Erreur TMDB");
-        }
-        const detail = await detailRes.json();
-        const credits = await creditsRes.json();
-        const similar = await similarRes.json();
-        const title = detail.title || detail.name || "Titre inconnu";
-        const originalTitle = detail.original_title || detail.original_name || "";
-        const date = detail.release_date || detail.first_air_date || "";
-        const year = getYear(date);
-        const runtime = detail.runtime || ((_a = detail.episode_run_time) === null || _a === void 0 ? void 0 : _a[0]) || 0;
-        const genres = (detail.genres || [])
-            .map((genre) => genre.name)
-            .join(" • ");
-        const countries = (detail.production_countries ||
-            detail.origin_country ||
-            [])
-            .map((country) => country.name || country)
-            .join(", ");
-        const director = mediaType === "movie"
-            ? getDirector(credits)
-            : ((_b = detail.created_by) === null || _b === void 0 ? void 0 : _b.map((creator) => creator.name).join(", ")) ||
-                "Inconnu";
-        document.title = `${title} | Cinetech`;
+        const detail = await dRes.json();
+        const credits = await cRes.json();
+        const similar = await sRes.json();
+        const title = detail.title || detail.name || "Inconnu";
         if (detailPoster)
-            detailPoster.style.backgroundImage = `url('${buildPoster(detail.poster_path || detail.backdrop_path)}')`;
-        if (detailKind)
-            detailKind.textContent = mediaType === "movie" ? "Film" : "Série";
+            detailPoster.style.backgroundImage = `url('${buildPoster(detail.poster_path)}')`;
         if (detailTitle)
             detailTitle.textContent = title;
-        if (detailSubtitle)
-            detailSubtitle.textContent =
-                originalTitle && originalTitle !== title ? originalTitle : "";
-        if (detailTags)
-            detailTags.innerHTML = [
-                genres && createTag(genres),
-                year && createTag(year),
-                countries && createTag(countries),
-            ]
-                .filter(Boolean)
-                .join("");
         if (detailOverview)
-            detailOverview.textContent =
-                detail.overview || "Aucun résumé disponible.";
-        if (detailExtra)
-            detailExtra.innerHTML = `
-      <div class="info-row"><strong>Réalisateur / Créateur :</strong> ${director}</div>
-      <div class="info-row"><strong>Durée :</strong> ${runtime ? `${runtime} min` : "N/A"}</div>
-      <div class="info-row"><strong>Popularité :</strong> ${Math.round(detail.popularity || 0)}</div>
-    `;
+            detailOverview.textContent = detail.overview;
         if (castList)
-            castList.innerHTML = renderCast(credits.cast || []);
+            castList.innerHTML = renderCast(credits.cast);
         if (similarGrid)
-            similarGrid.innerHTML = renderSimilar(similar.results || []);
+            similarGrid.innerHTML = renderSimilar(similar.results);
+        setupFavoriteButton(id, mediaType, title, detail.poster_path);
+        fetchTMDBReviews(mediaType, id);
+        displayLocalComments(id);
     }
-    catch (error) {
-        console.error("Erreur détail TMDB:", error);
-        if (detailTitle)
-            detailTitle.textContent = "Impossible de charger la fiche";
-        if (detailOverview)
-            detailOverview.textContent =
-                "Une erreur est survenue lors du chargement des informations.";
+    catch (err) {
+        console.error(err);
     }
 }
 loadDetails();

@@ -43,11 +43,11 @@ body header {
 }
 
 body header .container {
-  padding-top: 10px;
-  padding-bottom: 10px;
   background-color: #e6cc25;
   display: flex;
   justify-content: space-around;
+  padding-top: 20px;
+  padding-bottom: 20px;
 }
 
 body header nav {
@@ -103,23 +103,19 @@ body main .hero {
 .links a:hover {
   color: var(--red);
 }
-
+.search-autocomplete {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
 .header-search-input {
   border: 1px solid #d1d1d1;
-  width: 100%;
   border-radius: 8px 0 0 8px;
   color: #737373;
   font-family: montserrat, Arial, Sans-Serif;
   font-size: 0.8125rem;
   font-weight: 700;
   padding: 0.5rem 0.875rem;
-}
-
-.search-autocomplete {
-  position: relative;
-  display: inline-flex;
-  width: 100%;
-  max-width: 500px;
 }
 
 .header-search-submit {

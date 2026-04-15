@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cinetech | Détail</title>
+    <title>Cinetech | Favoris</title>
     <link rel="stylesheet" href="style.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
     />
   </head>
-  <body>
+  <body data-list-type="tv">
     <header>
       <div class="container">
         <div class="search-autocomplete">
@@ -56,45 +56,18 @@
       </nav>
     </header>
     <main>
-      <section class="detail-page">
-        <div class="detail-grid">
-          <div class="detail-poster" id="detail-poster"></div>
-          <div class="detail-info">
-            <p class="detail-kind" id="detail-kind"></p>
-            <h1 id="detail-title"></h1>
-            <p class="detail-subtitle" id="detail-subtitle"></p>
-            <div class="info-tags" id="detail-tags"></div>
-            <p class="detail-overview" id="detail-overview"></p>
-            <div class="detail-extra" id="detail-extra"></div>
-          </div>
-        </div>
+      <section class="page-intro">
+        <h1>Favoris</h1>
+        <p>Parcourez vos favoris.</p>
       </section>
-
-      <section class="detail-cast">
-        <h2>Acteurs principaux</h2>
-        <div class="cast-list" id="cast-list"></div>
+      <section class="list-controls-mv">
+        <div class="pagination" id="pagination"></div>
       </section>
-
-      <section class="similar-section">
-        <h3>Laisser un commentaire</h3>
-        <div id="local-comment-form"></div>
-      </section>
-
-      <section class="similar-section">
-        <h3>Commentaires (TMDB)</h3>
-        <div id="tmdb-reviews"></div>
-      </section>
-
-      <section class="similar-section">
-        <div class="section-header">
-          <h2>Suggéré pour vous</h2>
-        </div>
-        <div class="similar-grid" id="similar-grid"></div>
-      </section>
+      <section class="cards-grid" id="list-grid"></section>
     </main>
 
     <script src="./config/config.js"></script>
     <script src="./index.js"></script>
-    <script src="./details.js"></script>
+    <script src="./list.js"></script>
   </body>
 </html>
