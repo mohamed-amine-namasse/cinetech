@@ -9,15 +9,17 @@ const detailOverview = document.getElementById("detail-overview");
 const detailExtra = document.getElementById("detail-extra");
 const castList = document.getElementById("cast-list");
 const similarGrid = document.getElementById("similar-grid");
-// Nouveaux conteneurs pour les commentaires et avis
-const tmdbReviewsContainer = document.getElementById("tmdb-reviews");
+// Conteneurs pour les commentaires unifiés
 const localCommentFormContainer = document.getElementById("local-comment-form");
+const allReviewsContainer = document.getElementById("all-reviews-container");
 // --- Paramètres de l'URL ---
 const params = new URLSearchParams(window.location.search);
 const mediaType = params.get("type") === "tv" ? "tv" : "movie";
 const id = params.get("id");
 // Clé unique pour stocker les commentaires de ce média spécifique dans le localStorage
 const storageKey = `comments_${mediaType}_${id}`;
+// Variable globale pour stocker les avis TMDB récupérés
+let currentTmdbReviews = [];
 // --- Fonctions Utilitaires ---
 function createTag(text) {
     return `<span class="chip">${text}</span>`;
@@ -75,78 +77,86 @@ function renderSimilar(items) {
     })
         .join("");
 }
-function renderTMDBReviews(reviews) {
-    if (!reviews || !reviews.length)
-        return "<p>Aucun commentaire TMDB disponible pour le moment.</p>";
-    return reviews
-        .slice(0, 5)
-        .map((review) => {
-        const rating = review.author_details?.rating
-            ? `${review.author_details.rating}/10`
-            : "Non noté";
-        const date = new Date(review.created_at).toLocaleDateString("fr-FR");
-        return `
+function getLocalComments() {
+    const comments = localStorage.getItem(storageKey);
+    return comments ? JSON.parse(comments) : [];
+}
+// Fonction unifiée pour afficher TOUS les commentaires (Locaux puis TMDB)
+function renderAllReviews() {
+    if (!allReviewsContainer)
+        return;
+    const localComments = getLocalComments();
+    let html = "";
+    // 1. On affiche d'abord les commentaires locaux (Cinetech)
+    if (localComments.length > 0) {
+        html += localComments
+            .map((comment) => `
       <article class="review-card" style="border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-          <strong>${review.author}</strong>
+          <strong>${comment.username} <span style="font-size: 0.8em; color: #e50914;">(Utilisateur Cinetech)</span></strong>
+          <span style="background: #f1c40f; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold;">⭐ ${comment.rating}/10</span>
+        </div>
+        <p style="font-size: 0.9em; color: #666; margin-bottom: 0.5rem;">Le ${comment.date}</p>
+        <p>${comment.text}</p>
+      </article>
+    `)
+            .join("");
+    }
+    // 2. On affiche ensuite les commentaires de l'API TMDB
+    if (currentTmdbReviews && currentTmdbReviews.length > 0) {
+        html += currentTmdbReviews
+            .slice(0, 5)
+            .map((review) => {
+            const rating = review.author_details?.rating
+                ? `${review.author_details.rating}/10`
+                : "Non noté";
+            const date = new Date(review.created_at).toLocaleDateString("fr-FR");
+            return `
+      <article class="review-card" style="border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <strong>${review.author} <span style="font-size: 0.8em; color: #888;">(Avis TMDB)</span></strong>
           <span style="background: #f1c40f; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold;">⭐ ${rating}</span>
         </div>
         <p style="font-size: 0.9em; color: #666; margin-bottom: 0.5rem;">Le ${date}</p>
         <p>${review.content.substring(0, 300)}${review.content.length > 300 ? "..." : ""}</p>
       </article>
-    `;
-    })
-        .join("");
+      `;
+        })
+            .join("");
+    }
+    // S'il n'y a aucun commentaire (ni local, ni TMDB)
+    if (html === "") {
+        html =
+            "<p>Aucun commentaire disponible pour ce titre. Soyez le premier à donner votre avis !</p>";
+    }
+    allReviewsContainer.innerHTML = html;
 }
-function getLocalComments() {
-    const comments = localStorage.getItem(storageKey);
-    return comments ? JSON.parse(comments) : [];
-}
-function renderLocalCommentsList() {
-    const comments = getLocalComments();
-    if (comments.length === 0)
-        return "<p>Soyez le premier à donner votre avis !</p>";
-    return comments
-        .map((comment) => `
-    <article style="border-left: 4px solid #e50914; padding-left: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <strong>${comment.username}</strong>
-        <span style="color: #f1c40f;">⭐ ${comment.rating}/10</span>
-      </div>
-      <p style="font-size: 0.8em; color: #888;">Le ${comment.date}</p>
-      <p style="margin-top: 0.5rem;">${comment.text}</p>
-    </article>
-  `)
-        .join("");
-}
+// Fonction qui ne gère QUE le formulaire
 function initLocalComments() {
     if (!localCommentFormContainer)
         return;
-    // On vérifie le token de index.ts au lieu de isLoggedIn
     const hasToken = localStorage.getItem("user_token") !== null;
     const currentUsername = localStorage.getItem("username") || "Utilisateur anonyme";
-    let htmlContent = `<div id="local-comments-list">${renderLocalCommentsList()}</div>`;
+    let htmlContent = "";
     if (hasToken) {
-        htmlContent =
-            `
-      <form id="comment-form" style="display: flex; flex-direction: column; gap: 10px; max-width: 500px; margin-bottom: 2rem;">
+        htmlContent = `
+      <form id="comment-form" style="display: flex; flex-direction: column; gap: 10px; max-width: 500px; margin-bottom: 2rem; padding: 15px; background-color: #f9f9f9; border-radius: 8px; border: 1px solid #ddd;">
         <div style="display: flex; gap: 10px; align-items: center;">
-          <label for="user-rating"><strong>Votre note :</strong></label>
+          <label for="user-rating" style="color: #333;"><strong>Votre note :</strong></label>
           <input type="number" id="user-rating" min="0" max="10" step="1" required style="width: 60px; padding: 5px;" />
-          <span>/ 10</span>
+          <span style="color: #333;">/ 10</span>
         </div>
-        <textarea id="user-comment" placeholder="Écrivez votre commentaire ici en tant que ${currentUsername}..." required rows="4" style="padding: 10px; width: 100%;"></textarea>
+        <textarea id="user-comment" placeholder="Écrivez votre commentaire ici en tant que ${currentUsername}..." required rows="4" style="padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 4px;"></textarea>
         <button type="submit" class="btn" style="align-self: flex-start; padding: 10px 20px; cursor: pointer;">Publier mon avis</button>
       </form>
-    ` + htmlContent;
+    `;
     }
     else {
-        htmlContent =
-            `
-      <div style="background: #eee; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; color: #333;">
+        htmlContent = `
+      <div style="background: #eee; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; color: #333; text-align: center;">
         <p>Vous devez être connecté (via le bouton en haut) pour laisser un commentaire et une note.</p>
       </div>
-    ` + htmlContent;
+    `;
     }
     localCommentFormContainer.innerHTML = htmlContent;
     if (hasToken) {
@@ -156,7 +166,7 @@ function initLocalComments() {
             const ratingInput = document.getElementById("user-rating");
             const textInput = document.getElementById("user-comment");
             const newComment = {
-                username: currentUsername, // On utilise le vrai pseudo stocké !
+                username: currentUsername,
                 rating: Number(ratingInput.value),
                 text: textInput.value,
                 date: new Date().toLocaleDateString("fr-FR", {
@@ -167,7 +177,11 @@ function initLocalComments() {
             const existingComments = getLocalComments();
             existingComments.unshift(newComment);
             localStorage.setItem(storageKey, JSON.stringify(existingComments));
-            initLocalComments(); // On rafraîchit
+            // On vide le formulaire après soumission
+            ratingInput.value = "";
+            textInput.value = "";
+            // On rafraîchit TOUTE LA LISTE des commentaires
+            renderAllReviews();
         });
     }
 }
@@ -213,7 +227,6 @@ async function loadDetails() {
             [])
             .map((c) => c.name || c)
             .join(", ");
-        // Récupération du score moyen (ex: 7.8)
         const ratingValue = detail.vote_average || 0;
         const ratingDisplay = ratingValue > 0 ? `⭐ ${ratingValue.toFixed(1)}/10` : "";
         const director = mediaType === "movie"
@@ -232,13 +245,12 @@ async function loadDetails() {
                 (detail.original_title || detail.original_name) !== title
                     ? detail.original_title || detail.original_name
                     : "";
-        // Ajout du rating à côté des autres tags
         if (detailTags) {
             detailTags.innerHTML = [
                 genres && createTag(genres),
                 year && createTag(year),
                 countries && createTag(countries),
-                ratingDisplay && createTag(ratingDisplay), // Nouveau tag pour la note
+                ratingDisplay && createTag(ratingDisplay),
             ]
                 .filter(Boolean)
                 .join("");
@@ -256,9 +268,13 @@ async function loadDetails() {
             castList.innerHTML = renderCast(credits.cast || []);
         if (similarGrid)
             similarGrid.innerHTML = renderSimilar(similar.results || []);
-        if (tmdbReviewsContainer)
-            tmdbReviewsContainer.innerHTML = renderTMDBReviews(reviews.results || []);
+        // --- NOUVEAUTÉ : Initialisation des commentaires ---
+        // On sauvegarde les commentaires TMDB dans notre variable globale
+        currentTmdbReviews = reviews.results || [];
+        // On initialise le formulaire
         initLocalComments();
+        // On affiche la liste unifiée (Locaux + TMDB)
+        renderAllReviews();
     }
     catch (error) {
         console.error("Erreur:", error);
