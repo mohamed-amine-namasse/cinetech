@@ -96,19 +96,50 @@ function renderSimilar(items: any[]): string {
     })
     .join("");
 }
-
+//Interface pour les réponses
+interface LocalReply {
+  username: string;
+  text: string;
+  date: string;
+}
 // --- Gestion des Commentaires (Locaux + TMDB) ---
 
 interface LocalComment {
+  id: string;
   username: string;
   rating: number;
   text: string;
   date: string;
+  replies: LocalReply[];
 }
 
 function getLocalComments(): LocalComment[] {
-  const comments = localStorage.getItem(storageKey);
-  return comments ? JSON.parse(comments) : [];
+  const commentsStr = localStorage.getItem(storageKey);
+  if (!commentsStr) return [];
+
+  let parsedComments = JSON.parse(commentsStr);
+  let needsSave = false;
+
+  // On vérifie tous les commentaires
+  const fixedComments = parsedComments.map((c: any) => {
+    // Si un ancien commentaire n'a pas d'id ou de tableau de réponses
+    if (!c.id || !c.replies) {
+      needsSave = true; // On signale qu'il faudra sauvegarder
+      return {
+        ...c,
+        id: c.id || Math.random().toString(36).substr(2, 9), // ID définitif
+        replies: c.replies || [], // Tableau de réponses définitif
+      };
+    }
+    return c;
+  });
+
+  // Si on a corrigé d'anciens commentaires, on met à jour le localStorage
+  if (needsSave) {
+    localStorage.setItem(storageKey, JSON.stringify(fixedComments));
+  }
+
+  return fixedComments;
 }
 
 // Fonction unifiée pour afficher TOUS les commentaires (Locaux puis TMDB)
@@ -116,27 +147,64 @@ function renderAllReviews(): void {
   if (!allReviewsContainer) return;
 
   const localComments = getLocalComments();
+  const hasToken = localStorage.getItem("user_token") !== null;
   let html = "";
 
-  // 1. On affiche d'abord les commentaires locaux (Cinetech)
+  // 1. Les commentaires locaux (avec système de réponses)
   if (localComments.length > 0) {
     html += localComments
-      .map(
-        (comment) => `
-      <article class="review-card" style="border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
+      .map((comment) => {
+        // --- Génération du HTML des réponses existantes ---
+        let repliesHtml = "";
+        if (comment.replies && comment.replies.length > 0) {
+          repliesHtml = `<div style="margin-top: 1rem; padding-left: 1.5rem; border-left: 2px solid #e50914;">`;
+          repliesHtml += comment.replies
+            .map(
+              (reply) => `
+          <div style="margin-bottom: 0.8rem; background: #fff; padding: 0.8rem; border-radius: 6px; border: 1px solid #ddd;">
+            <strong style="color: #333; font-size: 0.9em;">${reply.username}</strong>
+            <span style="font-size: 0.8em; color: #888; margin-left: 10px;">Le ${reply.date}</span>
+            <p style="margin-top: 0.4rem; font-size: 0.95em; color: #444;">${reply.text}</p>
+          </div>
+        `,
+            )
+            .join("");
+          repliesHtml += `</div>`;
+        }
+
+        // --- Bouton "Répondre" et Formulaire caché ---
+        const replyActionHtml = hasToken
+          ? `
+        <button class="btn-toggle-reply" data-id="${comment.id}" style="background: none; border: none; color: #e50914; font-weight: bold; cursor: pointer; padding: 0; margin-top: 0.5rem;">
+          <i class="fa fa-reply"></i> Répondre
+        </button>
+        <div id="reply-form-container-${comment.id}" style="display: none; margin-top: 1rem; padding-left: 1.5rem;">
+          <textarea id="reply-input-${comment.id}" placeholder="Votre réponse..." rows="2" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+          <div style="margin-top: 5px;">
+            <button class="btn btn-submit-reply" data-id="${comment.id}" style="padding: 5px 10px; font-size: 0.8em;">Envoyer</button>
+            <button class="btn-cancel-reply" data-id="${comment.id}" style="background: none; border: none; color: #666; cursor: pointer; font-size: 0.8em; margin-left: 10px;">Annuler</button>
+          </div>
+        </div>
+      `
+          : "";
+
+        return `
+      <article class="review-card" style="border: 1px solid #e50914; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; background: rgba(229, 9, 20, 0.03);">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
           <strong>${comment.username} <span style="font-size: 0.8em; color: #e50914;">(Utilisateur Cinetech)</span></strong>
           <span style="background: #f1c40f; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold;">⭐ ${comment.rating}/10</span>
         </div>
         <p style="font-size: 0.9em; color: #666; margin-bottom: 0.5rem;">Le ${comment.date}</p>
-        <p>${comment.text}</p>
+        <p style="margin-bottom: 0.5rem;">${comment.text}</p>
+        ${replyActionHtml}
+        ${repliesHtml}
       </article>
-    `,
-      )
+      `;
+      })
       .join("");
   }
 
-  // 2. On affiche ensuite les commentaires de l'API TMDB
+  // 2. Les commentaires TMDB (inchangé)
   if (currentTmdbReviews && currentTmdbReviews.length > 0) {
     html += currentTmdbReviews
       .slice(0, 5)
@@ -145,7 +213,6 @@ function renderAllReviews(): void {
           ? `${review.author_details.rating}/10`
           : "Non noté";
         const date = new Date(review.created_at).toLocaleDateString("fr-FR");
-
         return `
       <article class="review-card" style="border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -160,15 +227,72 @@ function renderAllReviews(): void {
       .join("");
   }
 
-  // S'il n'y a aucun commentaire (ni local, ni TMDB)
   if (html === "") {
-    html =
-      "<p>Aucun commentaire disponible pour ce titre. Soyez le premier à donner votre avis !</p>";
+    html = "<p>Aucun commentaire disponible.</p>";
   }
 
   allReviewsContainer.innerHTML = html;
-}
 
+  // IMPORTANT : On attache les événements de clic une fois le HTML généré
+  attachReplyEvents();
+}
+function attachReplyEvents(): void {
+  // Afficher le mini-formulaire
+  document.querySelectorAll(".btn-toggle-reply").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+      const formContainer = document.getElementById(
+        `reply-form-container-${id}`,
+      );
+      if (formContainer) formContainer.style.display = "block";
+    });
+  });
+
+  // Cacher le mini-formulaire
+  document.querySelectorAll(".btn-cancel-reply").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+      const formContainer = document.getElementById(
+        `reply-form-container-${id}`,
+      );
+      if (formContainer) formContainer.style.display = "none";
+    });
+  });
+
+  // Sauvegarder la réponse
+  document.querySelectorAll(".btn-submit-reply").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+      const inputEl = document.getElementById(
+        `reply-input-${id}`,
+      ) as HTMLTextAreaElement;
+      const text = inputEl.value.trim();
+
+      if (!text) return; // Ne rien faire si c'est vide
+
+      const currentUsername = localStorage.getItem("username") || "Utilisateur";
+      const newReply: LocalReply = {
+        username: currentUsername,
+        text: text,
+        date: new Date().toLocaleDateString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+
+      // Mettre à jour le localStorage
+      const comments = getLocalComments();
+      const commentIndex = comments.findIndex((c) => c.id === id);
+
+      if (commentIndex !== -1) {
+        comments[commentIndex].replies.push(newReply);
+        localStorage.setItem(storageKey, JSON.stringify(comments));
+        renderAllReviews(); // Rafraîchir l'affichage
+      }
+    });
+  });
+}
 // Fonction qui ne gère QUE le formulaire
 function initLocalComments(): void {
   if (!localCommentFormContainer) return;
@@ -213,6 +337,7 @@ function initLocalComments(): void {
       ) as HTMLTextAreaElement;
 
       const newComment: LocalComment = {
+        id: Math.random().toString(36).substr(2, 9), // On génère un ID unique !
         username: currentUsername,
         rating: Number(ratingInput.value),
         text: textInput.value,
@@ -220,6 +345,7 @@ function initLocalComments(): void {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        replies: [],
       };
 
       const existingComments = getLocalComments();
