@@ -259,34 +259,3 @@ async function fetchHomeSelection(
 
 fetchHomeSelection("movie", "#films .cards-grid");
 fetchHomeSelection("tv", "#series .cards-grid");
-
-const btnLogin = document.querySelector(".btn-login") as HTMLButtonElement;
-
-// Fonction pour simuler la connexion
-function simulateLogin() {
-  const username = prompt("Entrez votre pseudo  :");
-  const password = prompt("Entrez votre mot de passe  :");
-  if (username && password) {
-    localStorage.setItem("user_token", "connected_as_" + username);
-    localStorage.setItem("username", username);
-    window.location.reload(); // On recharge pour mettre à jour l'affichage
-  }
-}
-
-// Fonction pour se déconnecter
-function simulateLogout() {
-  localStorage.removeItem("user_token");
-  localStorage.removeItem("username");
-  window.location.reload();
-}
-
-if (btnLogin) {
-  const token = localStorage.getItem("user_token");
-  if (token) {
-    btnLogin.textContent = "Déconnexion";
-    btnLogin.addEventListener("click", simulateLogout);
-  } else {
-    btnLogin.textContent = "Se connecter";
-    btnLogin.addEventListener("click", simulateLogin);
-  }
-}

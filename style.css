@@ -65,7 +65,7 @@ body header nav strong {
 body main {
   width: 100%;
   overflow: hidden;
-  padding-top: 145px;
+  padding-top: 175px;
   padding-left: 35px;
   padding-right: 35px;
   transition: all 0.3s;
@@ -116,6 +116,7 @@ body main .hero {
   font-size: 0.8125rem;
   font-weight: 700;
   padding: 0.5rem 0.875rem;
+  width: 250px;
 }
 
 .header-search-submit {
@@ -336,7 +337,7 @@ body main .hero {
   padding: 0.85rem 1.2rem;
   border-radius: 999px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 7vw;
 }
 
 .pagination button:disabled {
@@ -475,6 +476,13 @@ body main .hero {
   .list-controls {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .header-search-input {
+    width: 150px;
+  }
+  .pagination button {
+    padding: 0;
+    width: 80px;
   }
 }
 
