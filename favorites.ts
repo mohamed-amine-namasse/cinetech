@@ -52,8 +52,6 @@ function loadFavorites(): void {
     return;
   }
 
-  // --- MAGIE ICI ---
-  // On utilise renderCard de list.ts pour afficher chaque favori !
   favoritesGrid.innerHTML = favs.map(renderCard).join("");
 }
 
