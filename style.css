@@ -523,3 +523,13 @@ body main .hero {
 #main {
   color: var(--white);
 }
+
+.btn-favorite {
+  display: none;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+#nav-favorites {
+  display: none;
+}

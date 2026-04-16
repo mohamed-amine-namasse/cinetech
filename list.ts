@@ -1,3 +1,6 @@
+declare var API_KEY: string;
+declare var BASE_URL: string;
+declare var IMAGE_BASE: string;
 const listGrid: HTMLElement | null = document.getElementById("list-grid");
 const pagination: HTMLElement | null = document.getElementById("pagination");
 const type: string = document.body.dataset.listType || "movie";
@@ -18,16 +21,21 @@ function renderCard(item: any): string {
   const title: string = item.title || item.name || "Titre inconnu";
   const date: string = item.release_date || item.first_air_date || "";
   const year: string = date ? date.slice(0, 4) : "";
+
+  // NOUVEAU : On donne la priorité au type spécifique de l'item (utile pour les favoris)
+  const itemType = item.media_type || item.type || type;
+
   const poster: string = item.poster_path
     ? `${IMAGE_BASE}${item.poster_path}`
     : "https://via.placeholder.com/300x450?text=Pas+d'affiche";
+
   return `
     <article class="card">
-      <a href="./details.html?type=${type}&id=${item.id}">
+      <a href="./details.html?type=${itemType}&id=${item.id}">
         <div class="card-image" style="background-image:url('${poster}')"></div>
         <div class="card-body">
           <h3>${title}</h3>
-          <p class="card-meta">${year} • ${type === "tv" ? "Série" : "Film"}</p>
+          <p class="card-meta">${year ? year + " • " : ""}${itemType === "tv" ? "Série" : "Film"}</p>
         </div>
       </a>
     </article>

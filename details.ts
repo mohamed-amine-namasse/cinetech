@@ -1,3 +1,7 @@
+declare var API_KEY: string;
+declare var BASE_URL: string;
+declare var IMAGE_BASE: string;
+
 // --- Sélection des éléments du DOM ---
 const detailPoster: HTMLElement | null =
   document.getElementById("detail-poster");
@@ -12,23 +16,25 @@ const detailExtra: HTMLElement | null = document.getElementById("detail-extra");
 const castList: HTMLElement | null = document.getElementById("cast-list");
 const similarGrid: HTMLElement | null = document.getElementById("similar-grid");
 
-// Conteneurs pour les commentaires unifiés
+// Conteneurs pour les commentaires et boutons
 const localCommentFormContainer: HTMLElement | null =
   document.getElementById("local-comment-form");
 const allReviewsContainer: HTMLElement | null = document.getElementById(
   "all-reviews-container",
 );
+const btnFavorite: HTMLElement | null = document.getElementById("btn-favorite");
 
 // --- Paramètres de l'URL ---
 const params: URLSearchParams = new URLSearchParams(window.location.search);
 const mediaType: string = params.get("type") === "tv" ? "tv" : "movie";
 const id: string | null = params.get("id");
 
-// Clé unique pour stocker les commentaires de ce média spécifique dans le localStorage
+// Clé unique pour stocker les commentaires de ce média spécifique
 const storageKey = `comments_${mediaType}_${id}`;
 
-// Variable globale pour stocker les avis TMDB récupérés
+// Variables globales pour stocker les données du média en cours
 let currentTmdbReviews: any[] = [];
+let currentMediaDetail: any = null; // <-- Pour sauvegarder les infos pour les favoris
 
 // --- Fonctions Utilitaires ---
 
@@ -96,13 +102,96 @@ function renderSimilar(items: any[]): string {
     })
     .join("");
 }
-//Interface pour les réponses
+
+// --- GESTION DES FAVORIS ---
+
+interface FavoriteItem {
+  id: string;
+  type: string;
+  title: string;
+  poster_path: string | null;
+}
+
+// Récupère la clé de sauvegarde spécifique à l'utilisateur
+function getFavoritesStorageKey(): string {
+  const username = localStorage.getItem("username");
+  return username ? `favorites_${username}` : "favorites_anonymous";
+}
+
+function getFavorites(): FavoriteItem[] {
+  const key = getFavoritesStorageKey();
+  const favs = localStorage.getItem(key);
+  return favs ? JSON.parse(favs) : [];
+}
+
+function isCurrentlyFavorite(): boolean {
+  if (!id) return false;
+  const favs = getFavorites();
+  return favs.some((fav) => fav.id === id && fav.type === mediaType);
+}
+
+function updateFavoriteButtonUI(): void {
+  if (!btnFavorite) return;
+  const hasToken = localStorage.getItem("user_token") !== null;
+
+  // Si pas connecté, on cache le bouton
+  if (!hasToken) {
+    btnFavorite.style.display = "none";
+    return;
+  }
+
+  // Sinon on l'affiche et on ajuste le style selon s'il est favori ou non
+  btnFavorite.style.display = "inline-block";
+  btnFavorite.style.width = "200px";
+  if (isCurrentlyFavorite()) {
+    btnFavorite.innerHTML = `<i class="fa fa-heart"></i> Retirer des favoris`;
+    btnFavorite.style.backgroundColor = "#555"; // Gris foncé quand c'est déjà ajouté
+    btnFavorite.style.color = "white";
+  } else {
+    btnFavorite.innerHTML = `<i class="fa fa-heart-o"></i> Ajouter aux favoris`;
+    btnFavorite.style.backgroundColor = "#e50914"; // Rouge Cinetech
+    btnFavorite.style.color = "white";
+  }
+}
+
+function toggleFavorite(): void {
+  if (!id || !currentMediaDetail) return;
+
+  const key = getFavoritesStorageKey();
+  let favs = getFavorites();
+
+  if (isCurrentlyFavorite()) {
+    // Si c'est déjà un favori, on le retire
+    favs = favs.filter((fav) => !(fav.id === id && fav.type === mediaType));
+  } else {
+    // Sinon on l'ajoute
+    const title =
+      currentMediaDetail.title || currentMediaDetail.name || "Titre inconnu";
+    favs.push({
+      id: id,
+      type: mediaType,
+      title: title,
+      poster_path: currentMediaDetail.poster_path,
+    });
+  }
+
+  // On sauvegarde et on met à jour l'interface
+  localStorage.setItem(key, JSON.stringify(favs));
+  updateFavoriteButtonUI();
+}
+
+// Écouteur d'événement pour le clic sur le bouton Favoris
+if (btnFavorite) {
+  btnFavorite.addEventListener("click", toggleFavorite);
+}
+
+// --- GESTION DES COMMENTAIRES (Locaux + TMDB) ---
+
 interface LocalReply {
   username: string;
   text: string;
   date: string;
 }
-// --- Gestion des Commentaires (Locaux + TMDB) ---
 
 interface LocalComment {
   id: string;
@@ -120,29 +209,24 @@ function getLocalComments(): LocalComment[] {
   let parsedComments = JSON.parse(commentsStr);
   let needsSave = false;
 
-  // On vérifie tous les commentaires
   const fixedComments = parsedComments.map((c: any) => {
-    // Si un ancien commentaire n'a pas d'id ou de tableau de réponses
     if (!c.id || !c.replies) {
-      needsSave = true; // On signale qu'il faudra sauvegarder
+      needsSave = true;
       return {
         ...c,
-        id: c.id || Math.random().toString(36).substr(2, 9), // ID définitif
-        replies: c.replies || [], // Tableau de réponses définitif
+        id: c.id || Math.random().toString(36).substr(2, 9),
+        replies: c.replies || [],
       };
     }
     return c;
   });
 
-  // Si on a corrigé d'anciens commentaires, on met à jour le localStorage
   if (needsSave) {
     localStorage.setItem(storageKey, JSON.stringify(fixedComments));
   }
-
   return fixedComments;
 }
 
-// Fonction unifiée pour afficher TOUS les commentaires (Locaux puis TMDB)
 function renderAllReviews(): void {
   if (!allReviewsContainer) return;
 
@@ -150,11 +234,9 @@ function renderAllReviews(): void {
   const hasToken = localStorage.getItem("user_token") !== null;
   let html = "";
 
-  // 1. Les commentaires locaux (avec système de réponses)
   if (localComments.length > 0) {
     html += localComments
       .map((comment) => {
-        // --- Génération du HTML des réponses existantes ---
         let repliesHtml = "";
         if (comment.replies && comment.replies.length > 0) {
           repliesHtml = `<div style="margin-top: 1rem; padding-left: 1.5rem; border-left: 2px solid #e50914;">`;
@@ -172,7 +254,6 @@ function renderAllReviews(): void {
           repliesHtml += `</div>`;
         }
 
-        // --- Bouton "Répondre" et Formulaire caché ---
         const replyActionHtml = hasToken
           ? `
         <button class="btn-toggle-reply" data-id="${comment.id}" style="background: none; border: none; color: #e50914; font-weight: bold; cursor: pointer; padding: 0; margin-top: 0.5rem;">
@@ -204,7 +285,6 @@ function renderAllReviews(): void {
       .join("");
   }
 
-  // 2. Les commentaires TMDB (inchangé)
   if (currentTmdbReviews && currentTmdbReviews.length > 0) {
     html += currentTmdbReviews
       .slice(0, 5)
@@ -232,12 +312,10 @@ function renderAllReviews(): void {
   }
 
   allReviewsContainer.innerHTML = html;
-
-  // IMPORTANT : On attache les événements de clic une fois le HTML généré
   attachReplyEvents();
 }
+
 function attachReplyEvents(): void {
-  // Afficher le mini-formulaire
   document.querySelectorAll(".btn-toggle-reply").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -249,7 +327,6 @@ function attachReplyEvents(): void {
     });
   });
 
-  // Cacher le mini-formulaire
   document.querySelectorAll(".btn-cancel-reply").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
@@ -260,16 +337,16 @@ function attachReplyEvents(): void {
     });
   });
 
-  // Sauvegarder la réponse
   document.querySelectorAll(".btn-submit-reply").forEach((btn) => {
     btn.addEventListener("click", (e) => {
+      e.preventDefault();
       const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
       const inputEl = document.getElementById(
         `reply-input-${id}`,
       ) as HTMLTextAreaElement;
       const text = inputEl.value.trim();
 
-      if (!text) return; // Ne rien faire si c'est vide
+      if (!text) return;
 
       const currentUsername = localStorage.getItem("username") || "Utilisateur";
       const newReply: LocalReply = {
@@ -281,19 +358,18 @@ function attachReplyEvents(): void {
         }),
       };
 
-      // Mettre à jour le localStorage
       const comments = getLocalComments();
       const commentIndex = comments.findIndex((c) => c.id === id);
 
       if (commentIndex !== -1) {
         comments[commentIndex].replies.push(newReply);
         localStorage.setItem(storageKey, JSON.stringify(comments));
-        renderAllReviews(); // Rafraîchir l'affichage
+        renderAllReviews();
       }
     });
   });
 }
-// Fonction qui ne gère QUE le formulaire
+
 function initLocalComments(): void {
   if (!localCommentFormContainer) return;
 
@@ -337,7 +413,7 @@ function initLocalComments(): void {
       ) as HTMLTextAreaElement;
 
       const newComment: LocalComment = {
-        id: Math.random().toString(36).substr(2, 9), // On génère un ID unique !
+        id: Math.random().toString(36).substr(2, 9),
         username: currentUsername,
         rating: Number(ratingInput.value),
         text: textInput.value,
@@ -352,11 +428,8 @@ function initLocalComments(): void {
       existingComments.unshift(newComment);
       localStorage.setItem(storageKey, JSON.stringify(existingComments));
 
-      // On vide le formulaire après soumission
       ratingInput.value = "";
       textInput.value = "";
-
-      // On rafraîchit TOUTE LA LISTE des commentaires
       renderAllReviews();
     });
   }
@@ -394,6 +467,8 @@ async function loadDetails(): Promise<void> {
     }
 
     const detail: any = await detailRes.json();
+    currentMediaDetail = detail; // Sauvegarde des informations pour la fonction Favoris
+
     const credits: any = await creditsRes.json();
     const similar: any = await similarRes.json();
     const reviews: any = await reviewsRes.json();
@@ -461,15 +536,11 @@ async function loadDetails(): Promise<void> {
     if (similarGrid)
       similarGrid.innerHTML = renderSimilar(similar.results || []);
 
-    // --- NOUVEAUTÉ : Initialisation des commentaires ---
-
-    // On sauvegarde les commentaires TMDB dans notre variable globale
     currentTmdbReviews = reviews.results || [];
 
-    // On initialise le formulaire
+    // On initialise l'UI des boutons et commentaires
+    updateFavoriteButtonUI();
     initLocalComments();
-
-    // On affiche la liste unifiée (Locaux + TMDB)
     renderAllReviews();
   } catch (error) {
     console.error("Erreur:", error);
@@ -479,4 +550,7 @@ async function loadDetails(): Promise<void> {
 loadDetails();
 
 // Réagit automatiquement quand on clique sur "Se connecter" ou "Se déconnecter" dans la navbar
-window.addEventListener("authStateChanged", initLocalComments);
+window.addEventListener("authStateChanged", () => {
+  initLocalComments();
+  updateFavoriteButtonUI(); // Met à jour le bouton favoris sans recharger la page
+});

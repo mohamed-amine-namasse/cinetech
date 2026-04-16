@@ -1,33 +1,62 @@
-async function fetchMyFavorites() {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "./index.html"; // Redirige si non connecté
+declare var API_KEY: string;
+declare var BASE_URL: string;
+declare var IMAGE_BASE: string;
+// On informe TypeScript que cette fonction existe ailleurs (dans list.ts)
+declare function renderCard(item: any): string;
+
+// --- Sélection du conteneur DOM ---
+const favoritesGrid: HTMLElement | null =
+  document.getElementById("favorites-grid");
+
+// Interface correspondant à ce qu'on a sauvegardé dans details.ts
+interface FavoriteItem {
+  id: string;
+  type: string;
+  title: string;
+  poster_path: string | null;
+}
+
+// Récupère la clé exacte de l'utilisateur connecté
+function getFavoritesStorageKey(): string {
+  const username = localStorage.getItem("username");
+  return username ? `favorites_${username}` : "favorites_anonymous";
+}
+
+// Fonction principale de chargement
+function loadFavorites(): void {
+  if (!favoritesGrid) return;
+
+  const hasToken = localStorage.getItem("user_token") !== null;
+
+  if (!hasToken) {
+    favoritesGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: #eee; border-radius: 8px; color: #333;">
+        <h2>Vous n'êtes pas connecté</h2>
+        <p>Connectez-vous via le bouton en haut pour voir vos favoris.</p>
+      </div>
+    `;
     return;
   }
 
-  try {
-    // 1. Récupérer les ID favoris depuis TON backend
-    const response = await fetch("http://localhost:3000/favorites", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const myFavorites = await response.json(); // ex: [{ tmdb_id: 123, type: "movie" }, ...]
+  const key = getFavoritesStorageKey();
+  const favsStr = localStorage.getItem(key);
+  const favs: FavoriteItem[] = favsStr ? JSON.parse(favsStr) : [];
 
-    const grid = document.querySelector(".favorites-grid");
-    if (!grid) return;
-
-    // 2. Pour chaque favori, interroger TMDB pour afficher la carte
-    for (const fav of myFavorites) {
-      const tmdbRes = await fetch(
-        `${BASE_URL}/${fav.type}/${fav.tmdb_id}?api_key=${API_KEY}&language=fr-FR`,
-      );
-      const media = await tmdbRes.json();
-
-      // Utilise ta fonction renderCard existante
-      grid.innerHTML += renderCard(media);
-    }
-  } catch (error) {
-    console.error("Erreur chargement favoris :", error);
+  if (favs.length === 0) {
+    favoritesGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+        <h2 style="color: #fff;">Aucun favori pour le moment</h2>
+        <p style="color: #aaa;">Explorez les films et séries pour les ajouter à votre liste !</p>
+      </div>
+    `;
+    return;
   }
+
+  // --- MAGIE ICI ---
+  // On utilise renderCard de list.ts pour afficher chaque favori !
+  favoritesGrid.innerHTML = favs.map(renderCard).join("");
 }
 
-fetchMyFavorites();
+// --- Initialisation ---
+document.addEventListener("DOMContentLoaded", loadFavorites);
+window.addEventListener("authStateChanged", loadFavorites);

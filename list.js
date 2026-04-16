@@ -14,23 +14,24 @@ function renderCard(item) {
     const title = item.title || item.name || "Titre inconnu";
     const date = item.release_date || item.first_air_date || "";
     const year = date ? date.slice(0, 4) : "";
+    // NOUVEAU : On donne la priorité au type spécifique de l'item (utile pour les favoris)
+    const itemType = item.media_type || item.type || type;
     const poster = item.poster_path
         ? `${IMAGE_BASE}${item.poster_path}`
         : "https://via.placeholder.com/300x450?text=Pas+d'affiche";
     return `
     <article class="card">
-      <a href="./details.html?type=${type}&id=${item.id}">
+      <a href="./details.html?type=${itemType}&id=${item.id}">
         <div class="card-image" style="background-image:url('${poster}')"></div>
         <div class="card-body">
           <h3>${title}</h3>
-          <p class="card-meta">${year} • ${type === "tv" ? "Série" : "Film"}</p>
+          <p class="card-meta">${year ? year + " • " : ""}${itemType === "tv" ? "Série" : "Film"}</p>
         </div>
       </a>
     </article>
   `;
 }
 function renderPagination(page, totalPages) {
-    var _a, _b;
     if (!pagination)
         return;
     const previousDisabled = page <= 1 ? "disabled" : "";
@@ -40,10 +41,12 @@ function renderPagination(page, totalPages) {
     <span>Page ${page} sur ${totalPages}</span>
     <button ${nextDisabled} data-action="next">Suivant</button>
   `;
-    (_a = pagination
-        .querySelector("button[data-action=prev]")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", () => changePage(page - 1));
-    (_b = pagination
-        .querySelector("button[data-action=next]")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", () => changePage(page + 1));
+    pagination
+        .querySelector("button[data-action=prev]")
+        ?.addEventListener("click", () => changePage(page - 1));
+    pagination
+        .querySelector("button[data-action=next]")
+        ?.addEventListener("click", () => changePage(page + 1));
 }
 function changePage(newPage) {
     if (newPage < 1)
