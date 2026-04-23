@@ -2,7 +2,7 @@
 
 Il s'agit d'une bibliothèque de films et de séries. Elle a été réalisée grâce à l'API publique disponible en ligne (TMDB).
 
-### Elle comporte les pages suivantes:
+Elle comporte les pages suivantes:
 
 - Page d'accueil:
   La page d’accueil présente une sélection de films et une sélection des séries.
@@ -15,7 +15,7 @@ Il s'agit d'une bibliothèque de films et de séries. Elle a été réalisée gr
 - Page favoris:
   Page dédiée aux favoris de la personne connectée.
 
-Un utilisateur connecté peut ajouter un élément à sa liste “favoris” lorsqu’il la consulte et peut toujours consulter ses favoris dans la fage favoris.
+Un utilisateur connecté peut ajouter un élément à sa liste “favoris” lorsqu’il la consulte et peut toujours consulter ses favoris dans la page favoris.
 L’utilisateur peut laisser des commentaires sur les films et séries et peut répondre également à des commentaires laissés précédemment.
 L’utilisateur a la possibilité de chercher n’importe quel élément grâce à une barre de recherche intégrée dans le header
 
