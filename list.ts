@@ -22,7 +22,6 @@ function renderCard(item: any): string {
   const date: string = item.release_date || item.first_air_date || "";
   const year: string = date ? date.slice(0, 4) : "";
 
-  // NOUVEAU : On donne la priorité au type spécifique de l'item (utile pour les favoris)
   const itemType = item.media_type || item.type || type;
 
   const poster: string = item.poster_path
