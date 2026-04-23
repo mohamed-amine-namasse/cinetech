@@ -1,17 +1,19 @@
-## 🚀Cinetech
+# 🚀Cinetech
 
 Il s'agit d'une bibliothèque de films et de séries. Elle a été réalisée grâce à l'API publique disponible en ligne (TMDB).
-Elle comporte les pages suivantes:
-**Page d'accueil**
-La page d’accueil présente une sélection de films et une sélection des séries.
-**Page films**
-Page dédiée aux films qui affiche tous les films disponibles avec au minimum une pagination.
-**Page séries**
-Page dédiée aux films qui affiche tous les films disponibles avec au minimum une pagination.
-**Page détail**
-Page dans laquelle se trouvent les informations des films/séries (réalisateur, types, pays d’origine, résumé, acteurs, etc...).Sur cette page également, une suggestion de films et des séries similaires est proposée.
-**Page favoris**
-Page dédiée aux favoris de la personne connectée.
+
+### Elle comporte les pages suivantes:
+
+- Page d'accueil:
+  La page d’accueil présente une sélection de films et une sélection des séries.
+- Page films:
+  Page dédiée aux films qui affiche tous les films disponibles avec pagination.
+- Page séries:
+  Page dédiée aux films qui affiche tous les films disponibles avec pagination.
+- Page détail:
+  Page dans laquelle se trouvent les informations des films/séries (réalisateur, types, pays d’origine, résumé, acteurs, etc...).Sur cette page également, une suggestion de films et des séries similaires est proposée.
+- Page favoris:
+  Page dédiée aux favoris de la personne connectée.
 
 Un utilisateur connecté peut ajouter un élément à sa liste “favoris” lorsqu’il la consulte et peut toujours consulter ses favoris dans la fage favoris.
 L’utilisateur peut laisser des commentaires sur les films et séries et peut répondre également à des commentaires laissés précédemment.
