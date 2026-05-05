@@ -28,7 +28,7 @@ Le site est fait uniquement en front. Par conséquent, la gestion des connexions
 ```
 cinetech/
 ├── config/           # Configuration
-│   ├── config.js     #fichier de config qui contient la clé d'API
+│   ├── config.js     #fichier de config qui contient la clé d'API,BASE_URL,IMAGE_BASE
 │   └── config.ts
 |
 |── auth.js            # JS pour la modal de connexion dans la navbar
